@@ -38,21 +38,6 @@ The following abusive behaviors will result in an immediate ban (PR submission p
 
 ---
 
-## Join Our Community 🌍
-
-### Schedule an Introduction Call 📞
-- English speakers: [here](https://cal.com/matraix-team/30min)
-- Chinese speakers: [here](https://cal.com/matraix-team/30min)
-
-### Developer Meeting Time & Link 💻
-- English speakers: Mondays at 5 PM GMT+1. Join via Discord: [Meeting Link](https://discord.gg/FFe4nB8MJj?event=1313319275708289034)
-- Chinese speakers: Mondays at 9 PM UTC+8. Join via Tencent Meeting: [Meeting Link](https://meeting.tencent.com/dm/057wap1eeCSY)
-
-### Our Communication Channels 💬
-- **Discord:** [Join here](https://discord.matraix-ai.org/)
-- **WeChat:** Scan the QR code [here](https://ghli.org/matraix/wechat.png)
-- **Slack:** [Join here](https://join.slack.com/t/matraix_ai/shared_invite/zt-2g7xc41gy-_7rcrNNAArIP6sLQqldkqQ)
-
 ## Guidelines 📝
 
 ### Contributing to the Code 👨‍💻👩‍💻
