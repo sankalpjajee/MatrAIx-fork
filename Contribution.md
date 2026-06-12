@@ -38,6 +38,85 @@ The following abusive behaviors will result in an immediate ban (PR submission p
 
 ---
 
+## License
+
+MatrAIx is released under the MIT License. By contributing, you agree that your contributions will also be licensed under MIT. A copy of the license is in the `LICENSE` file at the repo root.
+
+## Open Source and Copyright Policy
+
+MatrAIx is fully open source. Every file in this repo, including code, datasets, prompts, evaluation results, and documentation, must be safe to share publicly under the MIT License. If something cannot be shared this way, it does not belong here.
+
+### Contributor Sign Off
+
+We use the Developer Certificate of Origin (DCO). Sign off every commit with `git commit -s`, which appends a `Signed-off-by` line confirming you wrote the code or have the right to submit it under MIT. The [DCO GitHub App](https://github.com/apps/dco) checks this on every PR.
+
+If you prefer a CLA based flow later, [CLA Assistant](https://cla-assistant.io/) can be added without disrupting existing contributors. For now, DCO is enough.
+
+### Data and Intellectual Property Rules
+
+Before adding anything to the repo, confirm the following:
+
+1. **No confidential or proprietary material.** Do not include code, data, prompts, schemas, internal tools, screenshots, or logs that belong to your employer, a client, a hospital, a research collaborator, or any third party that has not given clear permission for public release. When in doubt, leave it out.
+2. **No PII or PHI.** Datasets must be fully de identified. Anything covered by HIPAA, GDPR, FERPA, or similar regulations must never be committed, even in tests or fixtures.
+3. **Provenance for every dataset.** Each dataset under `data/` or referenced by a cookbook needs a `DATASHEET.md` describing the source, original license, collection method, intended use, and preprocessing.
+4. **Compatible dependency licenses.** Add only dependencies under permissive licenses such as MIT, BSD, Apache 2.0, ISC, or MPL 2.0. Avoid GPL and AGPL, which conflict with MIT redistribution.
+5. **Model weights.** Only ship weights you trained on openly licensed data, or weights distributed under a license that allows public redistribution. Document training data and license in a `MODEL_CARD.md`.
+6. **No scraped content with restrictive terms.** If a site forbids redistribution, do not include scraped data from it.
+7. **Attribution.** When using code or data from another open source project, keep the original copyright notices and license headers, and add an entry to `NOTICE` if needed.
+
+### PR Checklist
+
+Every PR template includes this box, which must be ticked before review:
+
+```markdown
+- [ ] All code, data, and documentation in this PR are mine to contribute,
+      contain no confidential or third party restricted material, and can
+      be redistributed publicly under the MIT License.
+```
+
+### Onboarding Checklist
+
+Before your first PR, confirm:
+
+1. The work is yours, or properly attributed and licensed for public release.
+2. No employer, client, or collaborator restrictions apply.
+3. No PII, PHI, secrets, credentials, or proprietary data are included.
+4. New dependencies use permissive licenses compatible with MIT.
+5. Datasets ship with a `DATASHEET.md`; models ship with a `MODEL_CARD.md`.
+6. Commits are signed off using `git commit -s`.
+
+### Dependency License Checks
+
+We run a license scanner in CI so incompatible dependencies fail builds before merge. The current setup uses `pip-licenses` against an allowlist defined in `ALLOWED_LICENSES.md` (MIT, BSD 2 Clause, BSD 3 Clause, Apache 2.0, ISC, Python Software Foundation, MPL 2.0). At release time, `THIRD_PARTY_NOTICES.md` is generated automatically so every dependency is listed with its license.
+
+### Secret and Leak Prevention
+
+To stop credentials and confidential snippets from ending up in git, the repo uses pre commit hooks for `gitleaks` (or `detect-secrets`) and `nbstripout`, which strips notebook outputs before commit. The `.gitignore` covers `.env`, local data folders, and IDE artifacts. GitHub secret scanning and push protection are enabled at the repo level, which blocks pushes containing detected secrets at the server side. If a secret is ever exposed, rotate it immediately and rewrite history with `git filter-repo` rather than relying on a follow up commit, since git history keeps the original blob forever.
+
+### Standard Repo Files
+
+The repo ships with the following so the legal and governance picture is clear at a glance:
+
+- `LICENSE`: full MIT license text.
+- `NOTICE`: third party attributions where required.
+- `CONTRIBUTING.md`: this file.
+- `CODE_OF_CONDUCT.md`: based on the [Contributor Covenant](https://www.contributor-covenant.org/).
+- `SECURITY.md`: how to report vulnerabilities privately.
+- `GOVERNANCE.md`: how decisions are made and how maintainers are added.
+- `.github/PULL_REQUEST_TEMPLATE.md`: includes the IP confirmation box above.
+- `.github/ISSUE_TEMPLATE/`: bug, feature, and data contribution templates.
+- `docs/templates/DATASHEET.md` and `docs/templates/MODEL_CARD.md`: starting points for new datasets and models.
+
+### Documenting Datasets and Models
+
+Datasets ship with a `DATASHEET.md` following the [Datasheets for Datasets](https://arxiv.org/abs/1803.09010) format, covering motivation, composition, collection, preprocessing, uses, distribution, and maintenance. Released models ship with a `MODEL_CARD.md` following the [Model Cards](https://arxiv.org/abs/1810.03993) format, covering intended use, training data, evaluation, limitations, and ethical considerations. Cookbooks that pull external resources link to the original source and its license at the top of the notebook.
+
+### Before Going Public
+
+If a contribution touches material that came from a hospital, a university lab, or sponsored research, run it past your institution's technology transfer office or open source program office before submitting. A single conversation confirms that nothing you ship is bound by an existing IP assignment, sponsored research agreement, or data use agreement. This is the cheapest way to avoid the worst class of open source mistake, which is releasing something that was never yours to release.
+
+---
+
 ## Guidelines 📝
 
 ### Contributing to the Code 👨‍💻👩‍💻
