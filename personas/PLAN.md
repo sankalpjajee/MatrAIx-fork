@@ -172,7 +172,78 @@ The schema blocks everything else, so settle it first. **Don't over-explore** �
 - Personas are then assembled by **linearly combining** the per-domain slices into one profile.
 - Reuse prior attribute sets where possible (e.g. the ~25 attributes from the persona-collapse work) instead of reinventing.
 
-**Owner(s):** @Eliza_Fan, @name2_ (add more as needed)
+
+
+
+[Lornezo] Generates the demographics domain slice for MatrAIxPersona: personas whose joint attribute distribution matches a real reference population. This is the shared "general" base layer that domain slices (finance / health / coding) condition on. Prototype-first; proof-of-concept before refinement.
+
+## 1. Where the joint comes from (the only real design decision)
+ 
+| | Approach | Joint realism | Cost / risk | Verdict |
+|---|---|---|---|---|
+| **A** | **Weighted resampling from census microdata** — draw real, de-identified person-records | Correct *by construction* (each record is a real person) | Zero modeling error; can't produce combinations absent from the sample | **v0** |
+| **B** | **Modeled joint** — PGM / Bayes net / copula, then ancestral sampling | As good as the model | Modeling error + build time; but enables novel/conditional combos | **v1** |
+ 
+NVIDIA's **Nemotron-Personas** uses (B) (PGM → LLM). For a prototype, (A) is faster and arguably *more* defensible — you sample an empirical joint instead of trusting a fitted one.
+   
+## 2. Data sources
+ 
+- **US prototype:** **ACS PUMS** (American Community Survey, Public Use Microdata Sample). 1-year (recency) or 5-year (more records / smaller geos). Person weight = `PWGTP`.
+  - Easiest access: the **`folktables`** Python package (research-standard ACS wrapper; handles download + weights), or the Census PUMS CSV / API directly.
+- **Global (v1 — the eventual "population-grounded" story):**
+  - **IPUMS-International** — harmonized census microdata across many countries.
+  - https://international.ipums.org/international-action/sample_details/country/ar#tab_ar2001a
+  - **DHS** (Demographic and Health Surveys) for low-/middle-income countries.
+  - **Eurostat** microdata for the EU.
+> Pin the exact reference population (country × year) per release so distributions are auditable and reproducible.
+
+### Step 1 — Skeleton via weighted resampling
+Pull ACS PUMS person records; resample with replacement **∝ `PWGTP`** to get `N` jointly-consistent demographic skeletons.
+ 
+Working attribute set (the "general" layer; domain attrs append later):
+ 
+| Field | PUMS var | Notes |
+|---|---|---|
+| age | `AGEP` | bin in Step 2 |
+| sex | `SEX` | — |
+| race / Hispanic origin | `RAC1P`, `HISP` | sensitive — see §5 |
+| education | `SCHL` | collapse to levels |
+| occupation | `OCCP` | → SOC **major group**, not 500 codes |
+| industry | `INDP` | major group |
+| employment status | `ESR` | — |
+| income | `PINCP` / `WAGP` | → brackets |
+| marital status | `MAR` | — |
+| household structure | `RELSHIPP` (`RELP` pre-2019) | has-kids / lives-alone derived |
+| geography | `ST` + `PUMA` | → region + urbanicity |
+| language | `LANP`, `ENG` | primary language at home |
+| nativity / citizenship | `NATIVITY`, `CIT` | — |
+| hours worked | `WKHP` | optional |
+ 
+### Step 2 — Coarsen by behavioral relevance *(the differentiator)*
+Carry **no attribute at finer granularity than moves behavior.**
+- age → child / teen / young-adult / adult / middle-aged / senior
+- income → brackets
+- occupation → SOC major groups
+- geography → region + urbanicity (not PUMA)
+Bin boundaries are decided by the **behavioral-sensitivity probe (§4)**, not intuition alone. This is "35 vs 36-year-old programmer doesn't matter" made operational.
+ 
+### Step 3 — Narrative expansion (LLM)
+Condition an LLM on the **structured skeleton** to write the rich persona text (Nemotron's PGM→LLM step, but skeleton from real data).
+- **Hard rule:** the LLM *narrativizes*; it **never invents or overrides** demographic facts.
+- The LLM step is where flatten-identity / stereotyping harm re-enters → use **diversity-forcing decoding** + a **stereotype audit** on outputs.
+### Step 4 — Schema conformance + provenance
+Emit each persona in the Task-1 demographic-slice schema (structured fields + narrative) with a **provenance tag** (`source = ACS PUMS <year>`, weight, hashed record id) so it is mergeable, auditable, and `fidelity-tier`-labelable against other sources.
+  
+## 4. Validation — *this is what makes it a contribution, not "anyone can resample PUMS"*
+ 
+1. **Marginal fidelity** — each attribute vs ACS reference (TV distance / chi-square / KS).
+2. **Joint fidelity** — pairwise + selected higher-order joints vs reference (e.g., age × education × income tables). **This is the check the naive pipeline fails.**
+3. **Persona collapse / diversity** — reuse the geometric **Coverage / Complexity / Uniformity** codebase from the persona-collapse work + embedding dedup. `effective_count` should track `nominal_count`, not collapse below it.
+4. **Behavioral sensitivity (cheap)** — vary **one** demographic axis, hold others fixed, generate persona-conditioned responses on a **tiny** task set, measure shift with cheap proxies (**HumT** + surface stats — length / markdown% / em-dash% / assistant-phrase% — à la ODYSSIM, plus task-specific checks).
+   - Output: a **ranked list of which demographic axes actually move behavior** → feeds back into Step 2's coarsening and the schema-keep decision.
+
+
+**Owner(s):** @Yunze Xiao @Eliza_Fan, @name2_ (add more as needed)
 
 ---
 
