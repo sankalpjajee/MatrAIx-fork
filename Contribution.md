@@ -153,6 +153,16 @@ We track work through [GitHub Issues](https://github.com/matraix-ai/matraix/issu
 - **Pull Requests:** Link the related issue, give the PR a clear title, and mark it ready for review when it's done. The linked issue closes automatically on merge.
 - **PR title prefixes:** `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore` (for example, `fix: Resolve memory leak issue`).
 
+#### 🏷️ Labels
+
+We use a small set of labels to keep issues easy to filter — please apply them when you open an issue:
+
+- **Team** — which team the issue belongs to: `team: persona`, `team: environment`, `team: application`.
+- **Type** — what the issue is: `status-update` (a person's long-lived progress log — never auto-close it), `task` (a concrete task or subtask a PR may resolve), plus the GitHub defaults `bug`, `enhancement`, `documentation`, `question`.
+- **For newcomers** — `good first issue` and `help wanted` flag where new contributors can jump in.
+
+Keep it lightweight: at minimum tag a `team: *` and a type. Maintainers can add more labels as needed.
+
 We run biweekly dev meetings to align on priorities and review recent work — you're welcome to join, but they're optional.
 
 ## 📝✍️ Authorship and Contribution
