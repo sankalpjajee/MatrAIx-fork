@@ -251,4 +251,5 @@ Cross-cutting layer: standardize how scenario outputs are scored, then turn raw 
 1. Pick a task above and add your name to its **Owner** field.
 2. Open an issue for your task to track details and progress.
 3. Align early on the shared **Application Template** (Task 1) — it blocks Tasks 2–6.
+4. Keep your own `Status Update - <Your Name>` issue and add the `status-update` + `team: application` labels so it's easy to find.
 4. Build **Type 1 (survey)** and **Type 2 (chatbot)** scenarios first.

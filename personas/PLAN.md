@@ -260,4 +260,5 @@ A small human study to validate data quality and benchmark ground-truth.
 1. Pick a task above and add your name to its **Owner** field.
 2. Open an issue for your task to track details and progress.
 3. Align early on the shared persona **schema** (Task 1) — it blocks Tasks 2–5.
+4. Keep your own `Status Update - <Your Name>` issue and add the `status-update` + `team: persona` labels so it's easy to find.
 
