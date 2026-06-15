@@ -8,7 +8,7 @@
 
 Collect and summarize existing persona work, grouped into the subsections below.
 
-**Owner(s):** @Shirley-Huang, _@name2, @name3_ (add more as needed)
+**Owner(s):** @Shirley-Huang, @Eliza_Fan, @name3_ (add more as needed)
 
 > 📌 **Default item format** — each entry should look like:
 >
@@ -167,7 +167,7 @@ The schema blocks everything else, so settle it first. **Don't over-explore** �
 - Personas are then assembled by **linearly combining** the per-domain slices into one profile.
 - Reuse prior attribute sets where possible (e.g. the ~25 attributes from the persona-collapse work) instead of reinventing.
 
-**Owner(s):** _@name1, @name2_ (add more as needed)
+**Owner(s):** @Eliza_Fan, @name2_ (add more as needed)
 
 ---
 
@@ -203,7 +203,7 @@ Turn the raw pool into clean, trustworthy data, and *measure* that quality (our 
 - **Fidelity** — do persona-conditioned agents actually *behave* in line with the profile? The harder, more important axis (links to MatrAIxPersonaBench, Task 4).
 - **Persona-factor analysis** — find which attributes actually shift agent action distributions (heatmap/matrix) to justify which dimensions are worth keeping. Note: behavior testing is expensive (API cost) — design it cheaply.
 
-**Owner(s):** _@name1, @name2, @name3_ (add more as needed)
+**Owner(s):** @Eliza_Fan, @name2, @name3_ (add more as needed)
 
 ---
 
@@ -217,7 +217,7 @@ Build the coreset for benchmarking **persona simulation quality**. For each pers
 
 > 🧩 Example: profile says *"dislikes comments in code"* → task: ask the agent (as this persona) to write a function → eval: check whether the output contains comments.
 
-**Owner(s):** _@name1, @name2, @name3_ (add more as needed)
+**Owner(s):** @Eliza_Fan, @name2, @name3_ (add more as needed)
 
 ---
 
@@ -229,7 +229,7 @@ A train-oriented coreset. **Goal: train a persona-conditioned model** that, give
 - Use for instruction tuning / fine-tuning so a model can faithfully follow any given persona.
 - Keep it lightweight — this is a supporting artifact, not the paper's focus.
 
-**Owner(s):** _@name1, @name2, @name3_ (add more as needed)
+**Owner(s):** @Eliza_Fan, @name2, @name3_ (add more as needed)
 
 ---
 
