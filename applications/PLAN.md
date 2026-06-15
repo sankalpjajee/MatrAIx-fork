@@ -6,7 +6,7 @@
 
 ---
 
-## 📚 Literature Review
+## 📚 Related Work
 
 Collect and summarize prior work on user simulation, evaluation scenarios, and domain-specific agent benchmarks.
 

@@ -6,7 +6,7 @@
 
 ---
 
-## 📚 Literature Review
+## 📚 Related Work
 
 Collect and summarize prior work on agent environments, evaluation harnesses, and simulation frameworks.
 
