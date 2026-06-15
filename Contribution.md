@@ -164,6 +164,9 @@ Authorship in MatrAIx is earned through visible, sustained, and well documented 
 Keeping a clear written trail of your work makes collaboration easier and ensures your contributions are properly attributed.
 
 - **Keep a status-update issue.** Open a GitHub Issue titled `Status Update - <Your Name>` (for example, `Status Update - Peter Parker`) and use it as your running log. Post dated updates capturing the motivation, design decisions, current status, open questions, and next steps as the work evolves. This is lighter weight than a tracked file and needs no PR.
+  - This issue is a **long-lived log** — keep it open for as long as you're active, with all dated updates appended in the same thread.
+  - When a PR relates to your work, reference the issue with a plain mention (`#123` or `ref #123`). **Do not** use auto-closing keywords (`fixes #123`, `closes #123`, `resolves #123`) on your status-update issue, or it will be closed when the PR merges. Add a `status-update` label to make these issues easy to find and harder to close by accident.
+  - Use separate, task-specific issues for concrete features or bugs — those are the ones a PR may legitimately resolve.
 - **Write meaningful commit messages and PR descriptions.** Each commit and PR should explain the why, not only the what. Link related issues, discussions, and design notes so reviewers and future readers can follow the reasoning.
 - **Keep a changelog or progress log.** For larger efforts spanning multiple PRs, maintain a short progress log inside your status-update issue, listing milestones reached, blockers encountered, and decisions made.
 - **Document experiments and results.** If your contribution involves benchmarks, evaluations, or ablations, record the configuration, dataset, metrics, and outcomes so the results are reproducible and reviewable.
