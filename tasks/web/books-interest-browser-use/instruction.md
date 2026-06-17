@@ -2,7 +2,7 @@
 
 Browse the public book catalog at:
 
-**https://books.toscrape.com/**
+https://books.toscrape.com/
 
 Use the **browser-use** agent loop (Chromium + DOM/vision tools) to explore the catalog as yourself and pick one book you would genuinely consider buying.
 

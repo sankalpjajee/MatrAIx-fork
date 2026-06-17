@@ -12,4 +12,4 @@ def repo_root() -> Path:
 
 @pytest.fixture
 def personas_0042(repo_root: Path) -> Path:
-    return repo_root / "personas" / "examples" / "persona_0042.yaml"
+    return repo_root / "persona" / "examples" / "persona_0042.yaml"

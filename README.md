@@ -25,12 +25,12 @@ uv sync
 # First run builds the task Docker image; may take a few minutes.
 uv run harbor run \
   -a persona-claude-code \
-  -m anthropic/claude-sonnet-4-20250514 \
-  --ak persona_path=personas/examples/persona_0042.yaml \
+  -m anthropic/claude-sonnet-4-6 \
+  --ak persona_path=persona/examples/persona_0042.yaml \
   -p tasks/survey/product-feedback
 ```
 
-Inspect results:
+Inspect results (`jobs/` includes example runs you can browse without re-running):
 
 ```bash
 uv run harbor view jobs --build
@@ -42,20 +42,15 @@ uv run harbor view jobs --build
 
 ## 🏗️ Architecture
 
-| Team | Layer | Docs | Repo |
-|------|-------|------|------|
-| 🧬 **Persona** | *who* is simulated | [docs/personas/](docs/personas/README.md) | `personas/` |
-| 🌐 **Environment** | *where* and *how* they act | [docs/environments/](docs/environments/README.md) | `configs/jobs/`, `src/harbor/`, `src/matraix/` |
-| 📋 **Application** | *what* we simulate | [docs/applications/](docs/applications/README.md) | `tasks/` |
+| Team | Delivers | Docs | Repo |
+|------|----------|------|------|
+| 🧬 **Persona** | model → generator → **persona card** | [docs/personas/](docs/personas/README.md) | `persona/` |
+| 🌐 **Environment** | Harbor: agents → instances (4 forms) → verifier → outputs | [docs/environments/](docs/environments/README.md) | `src/harbor/`, `src/matraix/`, `configs/jobs/` |
+| 📋 **Application** | app research → **task** (incl. eval design) | [docs/applications/](docs/applications/README.md) | `tasks/` |
 
-```mermaid
-flowchart LR
-    P["🧬 Persona<br/>synthetic population"] --> E["🌐 Environment<br/>execution & evaluation"]
-    A["📝 Application<br/>tasks & scenarios"] --> E
-    E --> R["📊 Traces, metrics,<br/>reports, benchmarks"]
-```
+![MatrAIx architecture](docs/assets/matraix-architecture.png)
 
-A typical simulation pipeline: select or generate personas → instantiate agents → choose an environment → define tasks and evaluation → run → collect traces → analyze → generate reports or benchmark results.
+**Persona card** + **task** enter **Harbor**. The agent runs in one of four **environment instances** (survey · chat · web · computer-use). **Artifacts / trajectories** → **verifier** → **metrics, reports, benchmarks** — all inside the Environment runtime (`src/harbor/`, task `tests/`).
 
 ---
 
@@ -82,10 +77,11 @@ Share your background and interests. We read every submission and will get back 
 ```text
 ├── src/matraix/          # Persona agents & MatrAIx extensions
 ├── src/harbor/           # Execution runtime (CLI, environments, viewer API)
-├── personas/             # Persona YAML (+ Jinja templates)
+├── persona/             # Persona YAML data
 ├── tasks/                # Application task simulation
 ├── examples/tasks/       # Harbor hello-world examples
 ├── configs/jobs/         # Job YAML templates
+├── jobs/                 # Run outputs (example persona-*-local runs checked in)
 ├── packages/rewardkit/   # Verifier / LLM-judge toolkit
 ├── apps/viewer/          # Web UI for harbor view
 └── docs/                 # Team documentation

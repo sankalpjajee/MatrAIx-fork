@@ -2,7 +2,7 @@
 
 Browse the public book catalog at:
 
-**https://books.toscrape.com/**
+https://books.toscrape.com/
 
 Use **Playwright** (Python API) to open the site in Chromium, explore the catalog as yourself, and pick one book you would genuinely consider buying.
 

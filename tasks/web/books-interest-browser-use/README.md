@@ -13,14 +13,14 @@ See [web-interaction.md](../../docs/applications/web-interaction.md).
 |-------|-------|
 | Agent | `persona-browser-use` |
 | Environment | `docker` (`network_mode = "public"`) |
-| Persona | `personas/examples/persona_0042.yaml` |
+| Persona | `persona/examples/persona_0042.yaml` |
 | API key | `ANTHROPIC_API_KEY` or `LLM_API_KEY` |
 
 ```bash
 uv run harbor run \
   -a persona-browser-use \
-  -m anthropic/claude-sonnet-4-20250514 \
-  --ak persona_path=personas/examples/persona_0042.yaml \
+  -m anthropic/claude-sonnet-4-6 \
+  --ak persona_path=persona/examples/persona_0042.yaml \
   -p tasks/web/books-interest-browser-use \
   --env-file .env
 ```
@@ -37,4 +37,4 @@ uv run harbor run -p tasks/web/books-interest-browser-use -a oracle
 |------|------|-------|
 | Playwright scripts | `books-interest-playwright` | `persona-openhands-sdk` |
 | Cocoa + AIO Sandbox | `books-interest-cocoa` | `persona-cocoa` |
-| CUA screenshots | `books-interest-cua` | `persona-computer-1` + `use-computer` |
+| CUA screenshots | `books-interest-linux-cua` | `persona-computer-1` (Docker) |

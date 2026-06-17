@@ -10,8 +10,10 @@ from harbor.agents.factory import AgentFactory
 from harbor.models.agent.name import AgentName
 from matraix.agents.persona.browser_use import PersonaBrowserUse
 from matraix.agents.persona.claude_code import PersonaClaudeCode
+from matraix.agents.persona.codex import PersonaCodex
 from matraix.agents.persona.cocoa import PersonaCocoa
 from matraix.agents.persona.computer_1 import PersonaComputer1
+from matraix.agents.persona.gemini_cli import PersonaGeminiCli
 from matraix.agents.persona.openhands_sdk import PersonaOpenHandsSDK
 
 
@@ -27,6 +29,16 @@ def repo_root() -> Path:
             AgentName.PERSONA_CLAUDE_CODE,
             PersonaClaudeCode,
             "matraix.agents.persona.claude_code:PersonaClaudeCode",
+        ),
+        (
+            AgentName.PERSONA_GEMINI_CLI,
+            PersonaGeminiCli,
+            "matraix.agents.persona.gemini_cli:PersonaGeminiCli",
+        ),
+        (
+            AgentName.PERSONA_CODEX,
+            PersonaCodex,
+            "matraix.agents.persona.codex:PersonaCodex",
         ),
         (
             AgentName.PERSONA_COMPUTER_1,
@@ -100,7 +112,7 @@ async def test_persona_claude_code_writes_meta(
     meta = json.loads(meta_path.read_text())
     assert meta["agent"] == "persona-claude-code"
     assert meta["display_name"] == "persona-0042"
-    assert meta["persona_path"].endswith("personas/examples/persona_0042.yaml")
+    assert meta["persona_path"].endswith("persona/examples/persona_0042.yaml")
 
 
 def test_persona_browser_use_injects_persona_system(
@@ -133,6 +145,21 @@ def test_persona_cocoa_prepends_instruction(
     tmp_path: Path, personas_0042: Path
 ) -> None:
     agent = PersonaCocoa(
+        logs_dir=tmp_path / "agent",
+        persona_path=str(personas_0042),
+    )
+    rendered = agent.render_instruction("Do the task.")
+    assert "0042" in rendered
+    assert "Product Manager" in rendered
+    assert "## Task instruction" in rendered
+    assert "Do the task." in rendered
+
+
+@pytest.mark.parametrize("agent_cls", [PersonaGeminiCli, PersonaCodex])
+def test_persona_cli_agents_prepends_instruction(
+    tmp_path: Path, personas_0042: Path, agent_cls: type
+) -> None:
+    agent = agent_cls(
         logs_dir=tmp_path / "agent",
         persona_path=str(personas_0042),
     )

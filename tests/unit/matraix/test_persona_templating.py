@@ -6,15 +6,17 @@ from matraix.agents.persona.loader import load_persona
 from matraix.agents.persona.templating import (
     PERSONA_INSTRUCTION_TEMPLATE,
     PERSONA_SYSTEM_TEMPLATE,
+    default_templates_dir,
     render_persona_template,
     resolve_persona_template,
-    templates_dir_for_persona,
 )
 
 
-def test_templates_dir_next_to_examples(personas_0042: Path) -> None:
-    persona = load_persona(personas_0042)
-    assert templates_dir_for_persona(persona) == personas_0042.parents[1] / "templates"
+def test_default_templates_dir() -> None:
+    templates = default_templates_dir()
+    assert templates.is_dir()
+    assert (templates / PERSONA_SYSTEM_TEMPLATE).is_file()
+    assert (templates / PERSONA_INSTRUCTION_TEMPLATE).is_file()
 
 
 def test_render_v0_system_template(tmp_path: Path) -> None:

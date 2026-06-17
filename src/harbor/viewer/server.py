@@ -109,8 +109,10 @@ def _uncached_input(n_input: int | None, n_cache: int | None) -> int | None:
     return max(0, n_input - n_cache)
 
 
-# Maximum file size to serve (1MB)
+# Maximum file size to serve. Text and other artifacts stay small; CUA
+# desktop screenshots (PNG/WebP) routinely exceed 1 MB.
 MAX_FILE_SIZE = 1024 * 1024
+MAX_IMAGE_FILE_SIZE = 10 * 1024 * 1024
 
 
 def create_app(
@@ -568,13 +570,6 @@ def _register_task_endpoints(
             else:
                 return f"{size_bytes / (1024 * 1024):.1f} MB"
 
-        file_size = full_path.stat().st_size
-        if file_size > MAX_FILE_SIZE:
-            raise HTTPException(
-                status_code=413,
-                detail=f"File too large: {_format_size(file_size)} (max {_format_size(MAX_FILE_SIZE)})",
-            )
-
         image_extensions = {
             ".png": "image/png",
             ".jpg": "image/jpeg",
@@ -583,6 +578,17 @@ def _register_task_endpoints(
             ".webp": "image/webp",
         }
         suffix = full_path.suffix.lower()
+        max_size = (
+            MAX_IMAGE_FILE_SIZE if suffix in image_extensions else MAX_FILE_SIZE
+        )
+
+        file_size = full_path.stat().st_size
+        if file_size > max_size:
+            raise HTTPException(
+                status_code=413,
+                detail=f"File too large: {_format_size(file_size)} (max {_format_size(max_size)})",
+            )
+
         if suffix in image_extensions:
             return FileResponse(
                 path=full_path,
@@ -1882,14 +1888,6 @@ def _register_job_endpoints(app: FastAPI, jobs_dir: Path) -> None:
             else:
                 return f"{size_bytes / (1024 * 1024):.1f} MB"
 
-        # Check file size
-        file_size = full_path.stat().st_size
-        if file_size > MAX_FILE_SIZE:
-            raise HTTPException(
-                status_code=413,
-                detail=f"File too large: {_format_size(file_size)} (max {_format_size(MAX_FILE_SIZE)})",
-            )
-
         # Handle image files - serve as binary with correct media type
         image_extensions = {
             ".png": "image/png",
@@ -1900,6 +1898,17 @@ def _register_job_endpoints(app: FastAPI, jobs_dir: Path) -> None:
             ".svg": "image/svg+xml",
         }
         suffix = full_path.suffix.lower()
+        max_size = (
+            MAX_IMAGE_FILE_SIZE if suffix in image_extensions else MAX_FILE_SIZE
+        )
+
+        file_size = full_path.stat().st_size
+        if file_size > max_size:
+            raise HTTPException(
+                status_code=413,
+                detail=f"File too large: {_format_size(file_size)} (max {_format_size(max_size)})",
+            )
+
         if suffix in image_extensions:
             return FileResponse(
                 path=full_path,

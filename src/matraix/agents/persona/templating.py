@@ -12,12 +12,9 @@ PERSONA_SYSTEM_TEMPLATE = "persona_system.md.j2"
 PERSONA_INSTRUCTION_TEMPLATE = "persona_instruction.md.j2"
 
 
-def templates_dir_for_persona(persona: Persona) -> Path:
-    """Resolve `personas/templates/` adjacent to the persona YAML tree."""
-    parent = persona.persona_path.parent
-    if parent.name == "examples":
-        return parent.parent / "templates"
-    return Path.cwd() / "personas" / "templates"
+def default_templates_dir() -> Path:
+    """Bundled persona prompt templates (Environment runtime, not persona data)."""
+    return Path(__file__).resolve().parent / "templates"
 
 
 def resolve_persona_template(
@@ -34,7 +31,7 @@ def resolve_persona_template(
             raise FileNotFoundError(f"Persona template not found: {template_path}")
         return resolved
 
-    default = templates_dir_for_persona(persona) / default_name
+    default = default_templates_dir() / default_name
     if not default.is_file():
         raise FileNotFoundError(
             f"Default persona template not found: {default}. "

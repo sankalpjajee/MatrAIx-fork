@@ -40,6 +40,8 @@ class AgentName(str, Enum):
     COCOA = "cocoa"
     PERSONA_BROWSER_USE = "persona-browser-use"
     PERSONA_COCOA = "persona-cocoa"
+    PERSONA_GEMINI_CLI = "persona-gemini-cli"
+    PERSONA_CODEX = "persona-codex"
 
     @classmethod
     def values(cls) -> set[str]:

@@ -13,7 +13,7 @@ import type {
   TaskDefinitionSummary,
   TaskFilters,
   TaskSummary,
-  Trajectory,
+  TrialTrajectory,
   TrialResult,
   TrialSummary,
   VerifierOutput,
@@ -256,7 +256,7 @@ export async function fetchTrajectory(
   jobName: string,
   trialName: string,
   step?: string | null
-): Promise<Trajectory | null> {
+): Promise<TrialTrajectory | null> {
   const response = await fetch(
     `${API_BASE}/api/jobs/${encodeURIComponent(jobName)}/trials/${encodeURIComponent(trialName)}/trajectory${stepQuery(step)}`
   );

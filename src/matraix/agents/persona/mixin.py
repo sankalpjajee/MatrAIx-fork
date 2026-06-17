@@ -35,7 +35,7 @@ class PersonaMixin:
         if not persona_path:
             raise ValueError(
                 f"{agent_name} requires persona_path "
-                "(pass --ak persona_path=personas/examples/persona_0042.yaml)"
+                "(pass --ak persona_path=persona/examples/persona_0042.yaml)"
             )
         self._persona = load_persona(persona_path)
         self._persona_agent_name = agent_name

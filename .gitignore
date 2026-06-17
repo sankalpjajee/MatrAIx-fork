@@ -207,7 +207,10 @@ marimo/_lsp/
 __marimo__/
 
 
-/jobs/
+# Local job outputs; example persona-*-local runs are checked in.
+/jobs/*
+!/jobs/persona-*-local/
+!/jobs/persona-*-local/**
 trials/
 *.ipynb
 /datasets/

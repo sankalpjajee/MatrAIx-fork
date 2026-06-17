@@ -2,7 +2,7 @@
 "area:persona":
   - changed-files:
       - any-glob-to-any-file:
-          - personas/**
+          - persona/**
           - src/matraix/**
           - packages/matraix/**
           - docs/personas/**

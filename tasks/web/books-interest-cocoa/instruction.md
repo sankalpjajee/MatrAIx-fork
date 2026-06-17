@@ -2,7 +2,7 @@
 
 Browse the public book catalog at:
 
-**https://books.toscrape.com/**
+https://books.toscrape.com/
 
 Use the **CocoaAgent** tools (browser, shell, files inside the AIO Sandbox) to explore the catalog as yourself and pick one book you would genuinely consider buying.
 

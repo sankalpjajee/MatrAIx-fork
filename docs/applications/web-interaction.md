@@ -1,6 +1,6 @@
 # Web interaction modes (MatrAIx)
 
-MatrAIx supports **four Docker / no-use.computer** ways to run persona web scenarios against **live public URLs**, plus **CUA** on `use-computer`. Pick the mode that fits the study — none is the global default.
+MatrAIx supports **four Docker / no-use.computer** ways to run persona web scenarios against **live public URLs**, plus **CUA** in Docker via `persona-computer-1`. Pick the mode that fits the study — none is the global default.
 
 ## Quick pick
 
@@ -9,7 +9,7 @@ MatrAIx supports **four Docker / no-use.computer** ways to run persona web scena
 | **Playwright** | `tasks/web/books-interest-playwright/` | `persona-openhands-sdk` | `docker` + `network_mode = "public"` | Terminal + Python Playwright; CI-friendly, lower cost |
 | **browser-use** | `tasks/web/books-interest-browser-use/` | `persona-browser-use` | `docker` + `network_mode = "public"` | Dedicated browser agent loop; persona via `extend_system_message` |
 | **Cocoa** | `tasks/web/books-interest-cocoa/` | `persona-cocoa` | `docker` + AIO Sandbox image + `network_mode = "public"` | Unified browser + shell + files in one container |
-| **CUA** | `tasks/web/books-interest-cua/` | `persona-computer-1` | `use-computer` | Screenshot loop on remote desktop; highest human fidelity |
+| **CUA** | `tasks/web/books-interest-linux-cua/` | `persona-computer-1` | `docker` | Screenshot loop in Linux Xvfb; no `USE_COMPUTER_API_KEY` |
 
 ## Shared submission contract
 
@@ -17,7 +17,7 @@ Live-web tasks use the same JSON shape and **the same submission path**:
 
 **`/app/output/book_interest.json`**
 
-On **use-computer macOS**, Harbor remaps `/app` → `/Users/lume` in shell commands, so the file lands at `/Users/lume/output/book_interest.json`. Verifiers and oracle scripts resolve this automatically; **instructions always say `/app/output/`**.
+On **use-computer macOS** (computer-use tasks only), Harbor remaps `/app` → `/Users/lume` in shell commands, so the file lands at `/Users/lume/output/book_interest.json`. Verifiers and oracle scripts resolve this automatically; **instructions always say `/app/output/`**.
 
 ```json
 {
@@ -47,8 +47,8 @@ export LLM_API_KEY="${ANTHROPIC_API_KEY}"
 ```bash
 uv run harbor run \
   -a persona-openhands-sdk \
-  -m anthropic/claude-sonnet-4-20250514 \
-  --ak persona_path=personas/examples/persona_0042.yaml \
+  -m anthropic/claude-sonnet-4-6 \
+  --ak persona_path=persona/examples/persona_0042.yaml \
   -p tasks/web/books-interest-playwright
 ```
 
@@ -71,7 +71,7 @@ uv run harbor run -p tasks/web/books-interest-playwright -a oracle
 **API key:** `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, or `LLM_API_KEY` (mapped by model provider).
 
 ```bash
-uv run harbor run -c configs/jobs/persona-browser-use-local.yaml
+uv run harbor run -c configs/jobs/persona-web-browser-use-local.yaml
 ```
 
 Oracle:
@@ -89,32 +89,30 @@ uv run harbor run -p tasks/web/books-interest-browser-use -a oracle
 **Cons:** Heavier base image than Playwright-only tasks; task Dockerfiles should extend the AIO Sandbox image.
 
 ```bash
-uv run harbor run -c configs/jobs/persona-cocoa-local.yaml
+uv run harbor run -c configs/jobs/persona-web-cocoa-local.yaml
 ```
 
 ## CUA mode (Chromium + computer-use)
 
-**How it works:** A real desktop browser window; each turn the model receives a **screenshot** and returns actions (`navigate`, `click`, `scroll`, …). Same family as `tasks/computer-use/notification-preferences/`.
+**How it works:** A real desktop browser window in Docker (Xvfb + XFCE); each turn the model receives a **screenshot** and returns actions (`navigate`, `click`, `scroll`, …). Same stack as `tasks/computer-use/linux-notification-preferences/`.
 
-**Pros:** Closest to end-user behavior; good for UX / friction studies.
+**Pros:** Closest to end-user behavior among Docker web modes; no `USE_COMPUTER_API_KEY`.
 
-**Cons:** Slower, costlier, less deterministic; needs `USE_COMPUTER_API_KEY` and `-e use-computer`.
-
-```bash
-export USE_COMPUTER_API_KEY=...
-uv run harbor run \
-  -a persona-computer-1 \
-  -m anthropic/claude-sonnet-4-20250514 \
-  --ak persona_path=personas/examples/persona_0042.yaml \
-  -p tasks/web/books-interest-cua \
-  -e use-computer
-```
-
-Oracle (writes submission file directly; still needs use-computer sandbox):
+**Cons:** Slower and costlier than Playwright/browser-use; first run builds a desktop image.
 
 ```bash
-uv run harbor run -p tasks/web/books-interest-cua -a oracle -e use-computer
+uv sync --extra computer-1
+export ANTHROPIC_API_KEY=...
+uv run harbor run -c configs/jobs/persona-web-linux-cua-local.yaml
 ```
+
+Oracle (writes submission file directly):
+
+```bash
+uv run harbor run -p tasks/web/books-interest-linux-cua -a oracle
+```
+
+For **macOS / iOS** screenshot CUA (system settings, not live web), use `tasks/computer-use/` with `-e use-computer` — see [choosing-an-agent.md](../environments/choosing-an-agent.md).
 
 ## What we do *not* treat as a web mode
 
@@ -140,6 +138,6 @@ uv run harbor run -p tasks/web/books-interest-cua -a oracle -e use-computer
 | `tasks/web/books-interest-playwright/` | Playwright + live URL |
 | `tasks/web/books-interest-browser-use/` | browser-use + live URL |
 | `tasks/web/books-interest-cocoa/` | Cocoa + live URL |
-| `tasks/web/books-interest-cua/` | CUA + live URL |
+| `tasks/web/books-interest-linux-cua/` | CUA + live URL (Docker) |
 
 See also [task-guide.md](./task-guide.md) and [choosing-an-agent.md](../environments/choosing-an-agent.md).

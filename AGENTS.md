@@ -11,11 +11,11 @@ Three teams:
 
 | Team | Assets (repo root) | Docs |
 |------|-------------------|------|
-| Persona | `personas/` | `docs/personas/` |
+| Persona | `persona/` | `docs/personas/` |
 | Application | `tasks/{survey,chat,web,computer-use}/` | `docs/applications/` |
 | Environment | `configs/jobs/`, `src/matraix/`, `src/harbor/` | `docs/environments/` |
 
-**CLI convention:** persona runs use `-a persona-<agent>` (e.g. `persona-claude-code`) with `--ak persona_path=personas/...`. No `matraix-persona` facade; no automatic task→agent mapping (see [`docs/environments/choosing-an-agent.md`](docs/environments/choosing-an-agent.md)).
+**CLI convention:** persona runs use `-a persona-<agent>` (e.g. `persona-claude-code`) with `--ak persona_path=persona/...`. No `matraix-persona` facade; no automatic task→agent mapping (see [`docs/environments/choosing-an-agent.md`](docs/environments/choosing-an-agent.md)).
 
 **Documentation language:** MatrAIx docs and READMEs are **English**.
 
@@ -34,7 +34,7 @@ uv run ty check
 ```
 src/matraix/          # MatrAIx core (persona agents, …)
 src/harbor/           # agent execution runtime
-personas/             # Persona YAML
+persona/              # Persona YAML
 tasks/                # MatrAIx simulation tasks
 configs/jobs/         # Job YAML
 packages/rewardkit/   # Verifier toolkit

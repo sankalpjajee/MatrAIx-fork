@@ -5,7 +5,7 @@ This directory (`docs/`) holds **MatrAIx team documentation** (Markdown only).
 > **Do not confuse with repo-root assets:**  
 > - `docs/applications/` = **Application team docs** (how to author tasks)  
 > - `/tasks/` (repo root) = **executable simulation tasks**  
-> Likewise: `docs/personas/` is documentation; `/personas/` is YAML data.
+> Likewise: `docs/personas/` is documentation; `/persona/` is YAML data.
 
 ## Overview
 
@@ -15,7 +15,7 @@ This directory (`docs/`) holds **MatrAIx team documentation** (Markdown only).
 
 | Team | Docs | Team PLAN | Repo assets (root) |
 |------|------|-----------|-------------------|
-| Persona | [personas/](./personas/) | [PLAN.md](./personas/PLAN.md) | `personas/` |
+| Persona | [personas/](./personas/) | [PLAN.md](./personas/PLAN.md) | `persona/` |
 | Application | [applications/](./applications/) | [PLAN.md](./applications/PLAN.md) | `tasks/{survey,chat,web,computer-use}/` |
 | Environment | [environments/](./environments/) — incl. [choosing an agent](./environments/choosing-an-agent.md) | [PLAN.md](./environments/PLAN.md) | `configs/jobs/`, `src/matraix/`, `src/harbor/` |
 
@@ -24,8 +24,8 @@ This directory (`docs/`) holds **MatrAIx team documentation** (Markdown only).
 ```bash
 uv run harbor run \
   -a persona-claude-code \
-  -m anthropic/claude-sonnet-4-20250514 \
-  --ak persona_path=personas/examples/persona_0042.yaml \
+  -m anthropic/claude-sonnet-4-6 \
+  --ak persona_path=persona/examples/persona_0042.yaml \
   -p tasks/chat/<scenario>
 ```
 

@@ -10,13 +10,13 @@ Requires **Docker Compose** (local `docker` environment). Not supported on cloud
 |-------|-------|
 | Agent | `persona-claude-code` |
 | Environment | `docker` (default) |
-| Persona | `personas/examples/persona_0042.yaml` |
+| Persona | `persona/examples/persona_0042.yaml` |
 
 ```bash
 uv run harbor run \
   -a persona-claude-code \
-  -m anthropic/claude-sonnet-4-20250514 \
-  --ak persona_path=personas/examples/persona_0042.yaml \
+  -m anthropic/claude-sonnet-4-6 \
+  --ak persona_path=persona/examples/persona_0042.yaml \
   -p tasks/chat/acme-support-mcp
 ```
 

@@ -13,13 +13,13 @@ See [web-interaction.md](../../docs/applications/web-interaction.md) for Playwri
 |-------|-------|
 | Agent | `persona-openhands-sdk` |
 | Environment | `docker` (Playwright image, `network_mode = "public"`) |
-| Persona | `personas/examples/persona_0042.yaml` |
+| Persona | `persona/examples/persona_0042.yaml` |
 
 ```bash
 uv run harbor run \
   -a persona-openhands-sdk \
-  -m anthropic/claude-sonnet-4-20250514 \
-  --ak persona_path=personas/examples/persona_0042.yaml \
+  -m anthropic/claude-sonnet-4-6 \
+  --ak persona_path=persona/examples/persona_0042.yaml \
   -p tasks/web/books-interest-playwright
 ```
 
@@ -31,4 +31,4 @@ uv run harbor run -p tasks/web/books-interest-playwright -a oracle
 
 ## CUA alternative
 
-For screenshot-based browsing, use `tasks/web/books-interest-cua/` with `persona-computer-1` and `-e use-computer`.
+For screenshot-based browsing, use `tasks/web/books-interest-linux-cua/` with `persona-computer-1` (Docker).

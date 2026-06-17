@@ -133,7 +133,9 @@ class ClaudeCode(BaseInstalledAgent):
         await self.exec_as_root(
             environment,
             command=(
-                "if command -v apk &> /dev/null; then"
+                "if command -v curl >/dev/null 2>&1 && command -v pgrep >/dev/null 2>&1; then"
+                "  exit 0;"
+                " elif command -v apk &> /dev/null; then"
                 "  apk add --no-cache curl bash nodejs npm procps;"
                 " elif command -v apt-get &> /dev/null; then"
                 "  apt-get update && apt-get install -y curl procps;"

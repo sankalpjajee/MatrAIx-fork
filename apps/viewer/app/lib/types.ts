@@ -220,6 +220,27 @@ export interface Trajectory {
   final_metrics: FinalMetrics | null;
 }
 
+/** Summary trajectory written by persona-browser-use (not ATIF). */
+export interface BrowserUseTrajectory {
+  final_result: string | null;
+  is_done: boolean;
+  is_successful: boolean;
+  urls: string[];
+  action_names: string[];
+  promoted_outputs: string[];
+}
+
+export type TrialTrajectory = Trajectory | BrowserUseTrajectory | Record<string, unknown>;
+
+export function isAtifTrajectory(data: unknown): data is Trajectory {
+  return (
+    typeof data === "object" &&
+    data !== null &&
+    "steps" in data &&
+    Array.isArray((data as Trajectory).steps)
+  );
+}
+
 export interface RewardCriterion {
   name: string;
   value: number;

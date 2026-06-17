@@ -20,7 +20,7 @@ tasks/<form>/<scenario>/
 
 | Layer | Where | Content |
 |-------|-------|---------|
-| **Who** | `personas/examples/*.yaml` + `-a persona-*` | Demographics, psychology, communication style |
+| **Who** | `persona/examples/*.yaml` + `-a persona-*` | Demographics, psychology, communication style |
 | **What** | `instruction.md` | Scenario, goals, output format |
 
 Do not put task scenarios in persona YAML. v1 personas use structured domains only.
@@ -43,7 +43,7 @@ MatrAIx Docker task layout inside the container:
 ```
 
 - **Docker** (default): `environment/Dockerfile` — survey, chat, web tasks.
-- **use-computer**: no Dockerfile; run with `-e use-computer` (see `tasks/computer-use/notification-preferences/`).
+- **use-computer**: no Dockerfile; run with `-e use-computer` (see `tasks/computer-use/macos-notification-preferences/`).
 - Seed static assets (briefs, mock pages) via `COPY` into `/app/input/`.
 - Pre-create `/app/input/` and `/app/output/` in the Dockerfile.
 
@@ -84,12 +84,12 @@ See `skills/rewardkit` and `examples/tasks/reward-kit-example/`.
 ```bash
 harbor run \
   -a persona-claude-code \
-  -m anthropic/claude-sonnet-4-20250514 \
-  --ak persona_path=personas/examples/persona_0042.yaml \
+  -m anthropic/claude-sonnet-4-6 \
+  --ak persona_path=persona/examples/persona_0042.yaml \
   -p tasks/survey/product-feedback
 ```
 
-Chat example: `tasks/chat/acme-support-mcp`.
+Chat examples: `tasks/chat/acme-support-api` (REST), `tasks/chat/acme-support-mcp` (MCP).
 
 Agent selection is **non-binding** in task READMEs — experimenters choose explicitly ([choosing-an-agent.md](../environments/choosing-an-agent.md)).
 
@@ -117,9 +117,15 @@ After a run you should see e.g. `jobs/.../artifacts/app/output/survey_responses.
 
 Harbor also auto-collects `/logs/artifacts/` (volume mount) if you use that convention instead.
 
+### Chat with REST API (multi-turn)
+
+For conversational tasks where the agent uses `curl` or scripts, run a mock chatbot as a **compose sidecar** and document the base URL in `instruction.md` (e.g. `http://support-api:8000`).
+
+See `tasks/chat/acme-support-api/`. Requires local **docker** (compose networking).
+
 ### Chat with MCP (multi-turn)
 
-For real conversational tasks, run a mock product chatbot as a **compose sidecar** and declare it in `task.toml`:
+For MCP tool calls instead of raw HTTP, declare the sidecar in `task.toml`:
 
 ```toml
 [[environment.mcp_servers]]
@@ -139,15 +145,22 @@ Contributors choose **Playwright** or **CUA** per application. Full guide: [web-
 | Playwright | `tasks/web/books-interest-playwright/` | `persona-openhands-sdk` | `docker`, `network_mode = "public"` |
 | browser-use | `tasks/web/books-interest-browser-use/` | `persona-browser-use` | `docker`, `network_mode = "public"` |
 | Cocoa | `tasks/web/books-interest-cocoa/` | `persona-cocoa` | `docker`, `network_mode = "public"` |
-| CUA | `tasks/web/books-interest-cua/` | `persona-computer-1` | `-e use-computer` |
+| CUA | `tasks/web/books-interest-linux-cua/` | `persona-computer-1` | `docker` |
 
 Playwright: set **`LLM_API_KEY`** on the host (`export LLM_API_KEY="$ANTHROPIC_API_KEY"`). See [choosing-an-agent.md](../environments/choosing-an-agent.md) and [web-interaction.md](./web-interaction.md).
 
-### Computer-use (real desktop)
+### Computer-use (real desktop / mobile)
 
-Desktop tasks use `-e use-computer` and **`persona-computer-1`**. Prefer **`/app/output/`** in instructions (MatrAIx convention). On use-computer **macOS**, Harbor maps `/app` → `/Users/lume` in shell commands; verifiers should resolve both.
+Desktop and mobile tasks use `-e use-computer` and **`persona-computer-1`**. Prefer **`/app/output/`** in instructions for web CUA tasks. On use-computer **macOS**, Harbor maps `/app` → `/Users/lume` in shell commands; verifiers should resolve both.
 
-- Reference: `tasks/computer-use/notification-preferences/`
+Computer-use submission dirs live under `/tmp/matraix-.../` in the sandbox (not `/app/output/`). Declare them in `task.toml` so Harbor pulls them to the host after the trial:
+
+```toml
+artifacts = ["/tmp/matraix-macos-notification-preferences"]
+```
+
+- macOS: `tasks/computer-use/macos-notification-preferences/` (default `platform: macos`)
+- Mobile (iOS Simulator): `tasks/computer-use/ios-notification-preferences/` — pass `--ek platform=ios` or `configs/jobs/persona-computer-use-ios-local.yaml`; pin simulator via `[ios]` in `task.toml`
 
 ## Oracle / CI
 
@@ -170,4 +183,4 @@ When importing external benchmarks via `adapters/`:
 
 - [applications/README.md](./README.md)
 - [skills/create-task](../../skills/create-task/SKILL.md)
-- [personas/README.md](../../personas/README.md)
+- [docs/personas/README.md](../personas/README.md)

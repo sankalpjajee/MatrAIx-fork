@@ -17,7 +17,7 @@ from harbor.models.trial.paths import EnvironmentPaths
 class BrowserUseHarborAgent(BaseInstalledAgent):
     """Run the browser-use library inside the task container."""
 
-    SUPPORTS_ATIF: bool = False
+    SUPPORTS_ATIF: bool = True
     _OUTPUT_FILENAME = "browser_use.txt"
     _TRAJECTORY_FILENAME = "trajectory.json"
     _VENV_PYTHON = "/opt/browser-use-venv/bin/python"
@@ -108,8 +108,21 @@ class BrowserUseHarborAgent(BaseInstalledAgent):
             return
         try:
             data = json.loads(trajectory_file.read_text(encoding="utf-8"))
-            context.metadata = {**(context.metadata or {}), "browser_use": data}
-        except (json.JSONDecodeError, OSError):
+            summary = data
+            if isinstance(data, dict):
+                extra = data.get("extra")
+                if isinstance(extra, dict) and isinstance(extra.get("browser_use"), dict):
+                    summary = extra["browser_use"]
+                final_metrics = data.get("final_metrics") or {}
+                if isinstance(final_metrics, dict):
+                    context.cost_usd = final_metrics.get("total_cost_usd")
+                    context.n_input_tokens = final_metrics.get("total_prompt_tokens", 0)
+                    context.n_output_tokens = final_metrics.get(
+                        "total_completion_tokens", 0
+                    )
+                    context.n_cache_tokens = final_metrics.get("total_cached_tokens", 0)
+            context.metadata = {**(context.metadata or {}), "browser_use": summary}
+        except (json.JSONDecodeError, OSError, TypeError, ValueError):
             pass
 
     @with_prompt_template
@@ -147,6 +160,9 @@ class BrowserUseHarborAgent(BaseInstalledAgent):
         env["TRAJECTORY_PATH"] = f"/logs/agent/{self._TRAJECTORY_FILENAME}"
         if self._max_steps is not None:
             env["MAX_STEPS"] = str(self._max_steps)
+
+        if self._version:
+            env["BROWSER_USE_VERSION"] = self._version
 
         persona_system = self._get_env("PERSONA_SYSTEM")
         if persona_system:

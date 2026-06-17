@@ -13,11 +13,11 @@ See [web-interaction.md](../../docs/applications/web-interaction.md).
 |-------|-------|
 | Agent | `persona-cocoa` |
 | Environment | `docker` (`network_mode = "public"`) |
-| Persona | `personas/examples/persona_0042.yaml` |
+| Persona | `persona/examples/persona_0042.yaml` |
 | API key | `ANTHROPIC_API_KEY` or `LLM_API_KEY` |
 
 ```bash
-uv run harbor run -c configs/jobs/persona-cocoa-local.yaml --env-file .env
+uv run harbor run -c configs/jobs/persona-web-cocoa-local.yaml --env-file .env
 ```
 
 Oracle (Playwright fetch inside task image; needs outbound network):
@@ -31,6 +31,7 @@ uv run harbor run -p tasks/web/books-interest-cocoa -a oracle
 - Docker on the host (standard Harbor `-e docker`)
 - Outbound network for the in-container browser
 - Larger image than Playwright-only tasks (`agent-infra/sandbox` base)
+- **Apple Silicon:** base image is **linux/amd64 only**; Dockerfile pins `--platform=linux/amd64`, and `environment/docker-compose.yaml` starts the real AIO Sandbox entrypoint (Harbor's default `sleep infinity` would leave `:8080` down).
 
 ## Alternatives
 
@@ -38,4 +39,4 @@ uv run harbor run -p tasks/web/books-interest-cocoa -a oracle
 |------|------|-------|
 | browser-use loop | `books-interest-browser-use` | `persona-browser-use` |
 | Playwright scripts | `books-interest-playwright` | `persona-openhands-sdk` |
-| CUA screenshots | `books-interest-cua` | `persona-computer-1` + `use-computer` |
+| CUA screenshots | `books-interest-linux-cua` | `persona-computer-1` (Docker) |

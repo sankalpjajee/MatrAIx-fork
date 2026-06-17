@@ -25,8 +25,9 @@ Docker tasks use `/app/input/` for seeded assets and `/app/output/` for agent su
 | web (Playwright) | `tasks/web/books-interest-playwright/` | `persona-openhands-sdk` |
 | web (browser-use) | `tasks/web/books-interest-browser-use/` | `persona-browser-use` |
 | web (Cocoa) | `tasks/web/books-interest-cocoa/` | `persona-cocoa` |
-| web (CUA) | `tasks/web/books-interest-cua/` | `persona-computer-1` |
-| computer-use | `tasks/computer-use/notification-preferences/` | `persona-computer-1` |
+| web (CUA) | `tasks/web/books-interest-linux-cua/` | `persona-computer-1` |
+| computer-use (macOS) | `tasks/computer-use/macos-notification-preferences/` | `persona-computer-1` |
+| computer-use (mobile / iOS) | `tasks/computer-use/ios-notification-preferences/` | `persona-computer-1` + `platform: ios` |
 
 ## Docs
 

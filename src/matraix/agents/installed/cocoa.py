@@ -12,7 +12,7 @@ from harbor.models.agent.context import AgentContext
 from harbor.models.agent.name import AgentName
 from harbor.models.trial.paths import EnvironmentPaths
 
-_COCOA_PYTHON = "/opt/python3.12/bin/python"
+_COCOA_PYTHON = "/opt/python3.12/bin/python3"
 _COCOA_ROOT = "/opt/cocoa-agent"
 
 
@@ -57,7 +57,7 @@ class CocoaHarborAgent(BaseInstalledAgent):
     async def install(self, environment: BaseEnvironment) -> None:
         check = await environment.exec(
             command=(
-                f"{_COCOA_PYTHON} -c 'from agents.cocoa_agent import CocoaAgent' "
+                f"{_COCOA_PYTHON} -c 'from executor import TaskExecutor' "
                 "2>/dev/null"
             ),
         )
@@ -71,7 +71,8 @@ class CocoaHarborAgent(BaseInstalledAgent):
                     "https://github.com/cocoabench/cocoa-agent.git /opt/cocoa-agent-src; "
                     "fi && "
                     f"{_COCOA_PYTHON} -m pip install --no-cache-dir "
-                    "-r /opt/cocoa-agent-src/requirements.txt agent-sandbox && "
+                    "-r /opt/cocoa-agent-src/requirements.txt "
+                    "openai anthropic colorama agent-sandbox && "
                     "ln -sfn /opt/cocoa-agent-src /opt/cocoa-agent"
                 ),
             )

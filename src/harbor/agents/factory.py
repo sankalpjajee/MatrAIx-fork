@@ -73,6 +73,10 @@ class AgentFactory:
             "matraix.agents.persona.browser_use:PersonaBrowserUse"
         ),
         AgentName.PERSONA_COCOA: "matraix.agents.persona.cocoa:PersonaCocoa",
+        AgentName.PERSONA_GEMINI_CLI: (
+            "matraix.agents.persona.gemini_cli:PersonaGeminiCli"
+        ),
+        AgentName.PERSONA_CODEX: "matraix.agents.persona.codex:PersonaCodex",
     }
 
     @classmethod

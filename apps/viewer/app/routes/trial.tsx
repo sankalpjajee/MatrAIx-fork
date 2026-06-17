@@ -82,7 +82,9 @@ import type {
   RewardDetails,
   Step,
   TrialResult,
+  TrialTrajectory,
 } from "~/lib/types";
+import { isAtifTrajectory } from "~/lib/types";
 import {
   ContentRenderer,
   ObservationContentRenderer,
@@ -736,6 +738,106 @@ function StepDurationBar({
   );
 }
 
+function LegacyTrajectoryViewer({ data }: { data: TrialTrajectory }) {
+  const finalResult =
+    typeof data === "object" &&
+    data !== null &&
+    "final_result" in data &&
+    typeof data.final_result === "string"
+      ? data.final_result
+      : null;
+  const actionNames =
+    typeof data === "object" &&
+    data !== null &&
+    "action_names" in data &&
+    Array.isArray(data.action_names)
+      ? (data.action_names as string[])
+      : null;
+  const urls =
+    typeof data === "object" &&
+    data !== null &&
+    "urls" in data &&
+    Array.isArray(data.urls)
+      ? (data.urls as string[])
+      : null;
+  const promotedOutputs =
+    typeof data === "object" &&
+    data !== null &&
+    "promoted_outputs" in data &&
+    Array.isArray(data.promoted_outputs)
+      ? (data.promoted_outputs as string[])
+      : null;
+  const isSuccessful =
+    typeof data === "object" && data !== null && "is_successful" in data
+      ? Boolean(data.is_successful)
+      : null;
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Trajectory</CardTitle>
+        <div className="text-sm text-muted-foreground">
+          Summary format (not ATIF)
+          {isSuccessful !== null && (
+            <> · {isSuccessful ? "successful" : "unsuccessful"}</>
+          )}
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {finalResult && <Markdown>{finalResult}</Markdown>}
+        {actionNames && actionNames.length > 0 && (
+          <div>
+            <h5 className="text-xs font-medium text-muted-foreground mb-1">
+              Actions
+            </h5>
+            <div className="flex flex-wrap gap-1.5">
+              {actionNames.map((name, idx) => (
+                <code
+                  key={`${name}-${idx}`}
+                  className="text-xs bg-muted px-1.5 py-0.5 rounded"
+                >
+                  {name}
+                </code>
+              ))}
+            </div>
+          </div>
+        )}
+        {urls && urls.length > 0 && (
+          <div>
+            <h5 className="text-xs font-medium text-muted-foreground mb-1">
+              URLs
+            </h5>
+            <ul className="text-xs space-y-1">
+              {[...new Set(urls)].map((url) => (
+                <li key={url} className="font-mono break-all">
+                  {url}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+        {promotedOutputs && promotedOutputs.length > 0 && (
+          <div>
+            <h5 className="text-xs font-medium text-muted-foreground mb-1">
+              Outputs
+            </h5>
+            <ul className="text-xs space-y-1">
+              {promotedOutputs.map((path) => (
+                <li key={path} className="font-mono break-all">
+                  {path}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+        {!finalResult && (
+          <CodeBlock code={JSON.stringify(data, null, 2)} lang="json" />
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 function TrajectoryViewer({
   jobName,
   trialName,
@@ -786,6 +888,10 @@ function TrajectoryViewer({
         </EmptyHeader>
       </Empty>
     );
+  }
+
+  if (!isAtifTrajectory(trajectory)) {
+    return <LegacyTrajectoryViewer data={trajectory} />;
   }
 
   const handleStepClick = (index: number) => {
@@ -1849,7 +1955,8 @@ function TrialContent({
     queryFn: () => fetchTrajectory(jobName, trialName, step),
   });
 
-  const trajectoryModel = trajectory?.agent.model_name ?? null;
+  const atifTrajectory = isAtifTrajectory(trajectory) ? trajectory : null;
+  const trajectoryModel = atifTrajectory?.agent.model_name ?? null;
   const { data: pricing } = useQuery({
     queryKey: ["pricing", trajectoryModel],
     queryFn: () => fetchModelPricing(trajectoryModel!),
@@ -1871,7 +1978,7 @@ function TrialContent({
     ? activeStepResult?.exception_info ?? null
     : trial.exception_info;
 
-  const metrics = trajectory?.final_metrics;
+  const metrics = atifTrajectory?.final_metrics ?? null;
 
   return (
     <>
