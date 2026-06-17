@@ -10,7 +10,7 @@
 
 Collect and summarize prior work on user simulation, evaluation scenarios, and domain-specific agent benchmarks.
 
-**Owner(s):** @Shirley-Huang, _@name2, @name3_ (add more as needed)
+**Owner(s):** @Shirley-Huang, @Qianfeng-Wen, @Yifan-Liu (add more as needed)
 
 > 📌 **Default item format** — each entry should look like:
 >
@@ -72,6 +72,26 @@ _Synthetic users, LLM-based user studies, product/UX evaluation._
 - Lu et al.: deployed 1,000 LLM agents to run an A/B test on a real Amazon interface, comparing against genuine human shopping logs and surfacing interface-sensitive, subgroup-level differences faster and at lower risk.
 - A direct analog of a MatrAIx application: a concrete task (compare two designs) + real environment → sampled persona agents → behavioral telemetry → decision report.
 
+### [SimUSER: Simulating User Behavior with Large Language Models for Recommender System Evaluation](https://arxiv.org/abs/2504.12722)
+- Bougie & Watanabe propose an agent framework that mines self-consistent personas from historical interaction logs, then equips each simulated user with persona, memory, perception, and reasoning modules so it behaves like a believable human proxy when interacting with a recommender.
+- Validates that simulated click/rating behavior aligns with real human behavior on recommender benchmarks, then demonstrates downstream utility by using the simulator's feedback to optimize recommender design choices (e.g., UI elements like thumbnails) without live A/B traffic.
+- Almost a one-to-one analogue of the MatrAIx loop: persona-driven simulated users → interact with a recommender environment → emit behavioral telemetry → feed back into improving the system — a direct architectural reference for the Chatbot environment (Task 3) recommender focus.
+
+### [On Generative Agents in Recommendation](https://arxiv.org/abs/2310.10108)
+- Zhang et al. (SIGIR 2024) introduce Agent4Rec, an LLM-driven generative-agent simulator where each agent has a profile (initialized from real users), a memory module storing factual and emotional traces, and an action module that emulates taste, satisfaction, and exit decisions while browsing recommendations.
+- Built on MovieLens, Steam, and Amazon-Book; studies how faithfully agents reproduce real user preferences plus emergent phenomena like filter bubbles, framed around the gap between offline metrics and online performance.
+- A canonical persona-driven-simulated-user → recommender-agent design: MatrAIx can reuse its profile/memory/action decomposition to sample LLM users, run them through a recommender environment, and turn their browsing trajectories into telemetry for a feedback report.
+
+### [User Behavior Simulation with Large Language Model based Agents](https://arxiv.org/abs/2306.02552)
+- Wang et al. present RecAgent, an LLM-agent framework with a sandbox "virtual world" where agents not only browse and rate items but also chat and post socially, producing high-fidelity simulated user-behavior data for recommendation research.
+- Simulates within a controllable environment, validates that generated behaviors match real human conduct, and reproduces social phenomena such as information cocoons and conformity, offering a reusable simulation paradigm rather than a single benchmark.
+- Strongly on-thesis for MatrAIx's sample-personas → run-in-environment → collect-telemetry stages: its sandbox-plus-agent architecture is a template for standing up an environment where simulated users generate the interaction logs that become a feedback report.
+
+### [AgentCF: Collaborative Learning with Autonomous Language Agents for Recommender Systems](https://arxiv.org/abs/2310.09233)
+- Zhang et al. (WWW 2024) model both users and items as autonomous language agents that interact, then collaboratively reflect on discrepancies between their simulated decisions and real interactions to optimize their profiles — bridging language modeling and collaborative-filtering-style behavior simulation.
+- Trained and evaluated on standard recommendation datasets (e.g., Amazon); the learned agents capture user-item, user-user, and item-item interaction patterns and can personalize behavior simulation comparable to real users.
+- Relevant to making MatrAIx's simulated users faithful: its reflection-based correction loop is a concrete mechanism for aligning persona-driven agent behavior with real telemetry before that telemetry is trusted in a feedback report.
+
 ### 🗂️ Domain Benchmarks
 _Task suites for tutoring, e-commerce, support, gaming, enterprise, etc._
 
@@ -130,6 +150,11 @@ _Task suites for tutoring, e-commerce, support, gaming, enterprise, etc._
 - Targets large-scale real-world tool/API orchestration with a DFS-based decision-tree reasoning method, beyond the handful of domain APIs in τ-bench/AppWorld.
 - Maps to the enterprise / App-Sandbox tool-use environment type: the canonical reference for breadth of real API tool-use MatrAIx enterprise agents must navigate.
 
+### [Large Language Models as Zero-Shot Conversational Recommenders](https://arxiv.org/abs/2308.10053)
+- He et al. (CIKM 2023) run a large empirical study showing off-the-shelf LLMs, with no fine-tuning, can act as conversational recommenders and outperform fine-tuned baselines, with probing analyses explaining where the gains come from.
+- Contributes the largest public "in-the-wild" conversational-recommendation dataset (scraped from a real discussion forum) and evaluates multiple LLMs against fine-tuned CRS models with ranking metrics.
+- Grounds the recommender-agent side of MatrAIx's loop: it defines the conversational-recommendation task and a realistic dataset/baseline suite that a persona-driven simulated user could converse against, with telemetry feeding the feedback report.
+
 ### 🧩 Others
 _Red-teaming, synthetic data generation, related work._
 
@@ -173,6 +198,11 @@ _Red-teaming, synthetic data generation, related work._
 - Evaluated on a 280B dialogue model, uncovering offensive replies, leaked training data, generated PII, and distributional bias — establishing the generate-case → classify-harm methodology later RL red-teaming builds on.
 - The canonical reference that the existing Curiosity-driven red-teaming entry extends, and the grounding work behind MatrAIx's "simulate adversarial users to stress-test an application" use case.
 
+### [A Survey on Large Language Models for Recommendation](https://arxiv.org/abs/2305.19860)
+- Wu et al. survey LLMs-for-recommendation, organizing the field into Discriminative (DLLM4Rec) and Generative (GLLM4Rec) paradigms, covering fine-tuning, prompting, and key open challenges.
+- A literature survey (not a method or benchmark): it categorizes methodologies across both paradigms and maintains a companion index of papers in the area.
+- Provides taxonomy and grounding for MatrAIx's recommender-agent subarea, helping situate persona-driven user simulation and conversational recommendation within the broader LLMs-for-rec landscape.
+
 ---
 
 ## 📐 Task 1 — Application Template & Conventions
@@ -208,7 +238,9 @@ Scenarios where the agent converses with a target AI system and evaluates it.
 - Include **hard users** (privacy-sensitive, low-literacy/elderly, confused, adversarial).
 - Each with task prompt, persona requirements, metrics, example run.
 
-**Owner(s):** @Shirley-Huang, @Eliza_Fan, @Xiaoyi-Liu (add more as needed)
+**Owner(s):** @Shirley-Huang, @Eliza_Fan, @Xiaoyi-Liu, @Qianfeng-Wen, @Yifan-Liu (add more as needed)
+
+> 🎯 **@Qianfeng-Wen & @Yifan-Liu** are focusing on **AI recommender agent** settings — a persona-driven simulated user converses with a recommender chatbot (conversational recommendation) and we evaluate the quality of its suggestions. Builds on [iEvaLM](https://arxiv.org/abs/2305.13112) and [Evaluating LLMs as Generative User Simulators for Conversational Recommendation](https://arxiv.org/abs/2403.09738) from Related Work.
 
 ---
 
