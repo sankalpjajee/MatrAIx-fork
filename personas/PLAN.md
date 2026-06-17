@@ -8,7 +8,7 @@
 
 Collect and summarize existing persona work, grouped into the subsections below.
 
-**Owner(s):** @Shirley-Huang, @Eliza_Fan, @Yixuan-He (add more as needed)
+**Owner(s):** @Shirley-Huang, @Eliza_Fan, @Yixuan-He, @Xiaoyi-Liu (add more as needed)
 
 > 📌 **Default item format** — each entry should look like:
 >
@@ -169,6 +169,7 @@ _Benchmarks, evaluation, related work that doesn't fit above._
 ---
 
 ## 🧱 Task 1 — Schema & Domain Design
+**Owner(s):** @Yunze Xiao @Eliza_Fan, @Xiaoyi-Liu, @name3_ (add more as needed)
 
 The schema blocks everything else, so settle it first. **Don't over-explore** — define attributes from understanding of the target domains/tasks (limited-scope exploration).
 
@@ -247,9 +248,6 @@ Emit each persona in the Task-1 demographic-slice schema (structured fields + na
 4. **Behavioral sensitivity (cheap)** — vary **one** demographic axis, hold others fixed, generate persona-conditioned responses on a **tiny** task set, measure shift with cheap proxies (**HumT** + surface stats — length / markdown% / em-dash% / assistant-phrase% — à la ODYSSIM, plus task-specific checks).
    - Output: a **ranked list of which demographic axes actually move behavior** → feeds back into Step 2's coarsening and the schema-keep decision.
 
-
-**Owner(s):** @Yunze Xiao @Eliza_Fan, @Xiaoyi-Liu, @name3_ (add more as needed)
-
 ---
 
 ## 🏗️ Task 2 — MatrAIxPersona-8B Data Construction
@@ -258,7 +256,7 @@ Build the raw persona pool through four complementary sources, all conforming to
 
 | # | Subtask | Description | Owner(s) |
 |---|---------|-------------|----------|
-| 2.1 | 📥 **Collect open-source datasets** | Gather existing persona datasets (from the related work), clean and normalize into the MatrAIx schema. | _@name1, @name2, @name3_ |
+| 2.1 | 📥 **Collect open-source datasets** | Gather existing persona datasets (from the related work), clean and normalize into the MatrAIx schema. | @Xiaoyi-Liu, @name2, @name3_ |
 | 2.2 | 🧪 **Heuristic + synthetic generation** | Per-domain attribute combination + generation with multiple strong models (GPT, Claude, DeepSeek). Seed with real-world demographic priors for realism. | @ElegantLin, @name2, @name3_ |
 | 2.3 | 🧑 **Personas from real human info** | Build personas seeded by public/real signals (public figures, social profiles, chat/conversation data), properly anonymized. | @Laerdon Kim, _@name2, @name3_ |
 | 2.4 | 📝 **Questionnaire → volunteers** | Design a questionnaire, collect volunteer data, and expand each response into a full persona via synthetic augmentation. | _@name1, @name2, @name3_ |
@@ -269,7 +267,7 @@ Build the raw persona pool through four complementary sources, all conforming to
 ---
 
 ## 🧹 Task 3 — Data Quality Filtering & Evaluation
-
+**Owner(s):** @Eliza_Fan, @name2, @name3_ (add more as needed)
 Turn the raw pool into clean, trustworthy data, and *measure* that quality (our differentiator). This is a **foundation** task — we generate a lot, then filter hard.
 
 **Filtering**
@@ -284,12 +282,10 @@ Turn the raw pool into clean, trustworthy data, and *measure* that quality (our 
 - **Fidelity** — do persona-conditioned agents actually *behave* in line with the profile? The harder, more important axis (links to MatrAIxPersonaBench, Task 4).
 - **Persona-factor analysis** — find which attributes actually shift agent action distributions (heatmap/matrix) to justify which dimensions are worth keeping. Note: behavior testing is expensive (API cost) — design it cheaply.
 
-**Owner(s):** @Eliza_Fan, @name2, @name3_ (add more as needed)
-
 ---
 
 ## 📊 Task 4 — MatrAIxPersonaBench
-
+**Owner(s):** @Eliza_Fan, @Keyang Xuan, @Wenkai Li (add more as needed)
 Build the coreset for benchmarking **persona simulation quality**. For each persona, derive concrete tasks + evaluation tied to specific profile attributes.
 
 - For each persona → generate task(s) targeting one or more attributes.
@@ -297,8 +293,6 @@ Build the coreset for benchmarking **persona simulation quality**. For each pers
 - Cover multiple aspects (demographics, personality, preferences, behavior, communication).
 
 > 🧩 Example: profile says *"dislikes comments in code"* → task: ask the agent (as this persona) to write a function → eval: check whether the output contains comments.
-
-**Owner(s):** @Eliza_Fan, @Keyang Xuan, @Wenkai Li (add more as needed)
 
 ---
 
@@ -315,14 +309,12 @@ A train-oriented coreset. **Goal: train a persona-conditioned model** that, give
 ---
 
 ## ✅ Task 6 — Human Validation
-
+**Owner(s):** _@name1, @name2, @name3_ (add more as needed)
 A small human study to validate data quality and benchmark ground-truth.
 
 - Sample a subset (a few hundred personas / bench tasks).
 - Annotators rate each on a simple 1–5 rubric: **realism**, **internal consistency**, and (for bench) **correctness of the expected behavior / eval**.
 - Report inter-annotator agreement; use results to calibrate the LLM-judge.
-
-**Owner(s):** _@name1, @name2, @name3_ (add more as needed)
 
 ---
 
