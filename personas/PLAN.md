@@ -257,7 +257,7 @@ Build the raw persona pool through four complementary sources, all conforming to
 | # | Subtask | Description | Owner(s) |
 |---|---------|-------------|----------|
 | 2.1 | 📥 **Collect open-source datasets** | Gather existing persona datasets (from the related work), clean and normalize into the MatrAIx schema. | @Xiaoyi-Liu, @AravindMohan10, @name3_ |
-| 2.2 | 🧪 **Heuristic + synthetic generation** | Per-domain attribute combination + generation with multiple strong models (GPT, Claude, DeepSeek). Seed with real-world demographic priors for realism. | @ElegantLin, @AravindMohan10, @brihijoshi |
+| 2.2 | 🧪 **Heuristic + synthetic generation** | Per-domain attribute combination + generation with multiple strong models (GPT, Claude, DeepSeek). Seed with real-world demographic priors for realism. | @ElegantLin, @AravindMohan10, @brihijoshi @isgla |
 | 2.3 | 🧑 **Personas from real human info** | Build personas seeded by public/real signals (public figures, social profiles, chat/conversation data), properly anonymized. | @Laerdon Kim, @brihijoshi, @name3_ |
 | 2.4 | 📝 **Questionnaire → volunteers** | Design a questionnaire, collect volunteer data, and expand each response into a full persona via synthetic augmentation. | _@name1, @name2, @name3_ |
 | 2.5 | 🔁 **Continuous-growth intake** | Let contributors keep adding personas over time (upload conversations, fill/extend a profile) so the pool grows; gate on the Task 3 quality bar. | _@name1, @name2, @name3_ |
@@ -285,7 +285,7 @@ Turn the raw pool into clean, trustworthy data, and *measure* that quality (our 
 ---
 
 ## 📊 Task 4 — MatrAIxPersonaBench
-**Owner(s):** @Eliza_Fan, @Keyang Xuan, @Wenkai Li (add more as needed)
+**Owner(s):** @Eliza_Fan, @Keyang Xuan, @Wenkai Li, @isgla (add more as needed)
 Build the coreset for benchmarking **persona simulation quality**. For each persona, derive concrete tasks + evaluation tied to specific profile attributes.
 
 - For each persona → generate task(s) targeting one or more attributes.
