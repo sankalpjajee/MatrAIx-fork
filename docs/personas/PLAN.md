@@ -8,7 +8,7 @@
 
 Collect and summarize existing persona work, grouped into the subsections below.
 
-**Owner(s):** @Shirley-Huang, @Eliza_Fan, @Yixuan-He (add more as needed)
+**Owner(s):** @Shirley-Huang, @Eliza_Fan, @Yixuan-He, @Xiaoyi-Liu (add more as needed)
 
 > 📌 **Default item format** — each entry should look like:
 >
@@ -161,14 +161,20 @@ _Benchmarks, evaluation, related work that doesn't fit above._
 - Empirically grounded: 4 LLMs, human studies with 3,200 participants across 16 demographic identities, plus inference-time mitigation tests (Wang, Morgenstern, Dickerson et al.; Nature Machine Intelligence 2024).
 - Bears on a fairness/distinctiveness axis in MatrAIxPersonaBench — whether large-scale persona agents preserve within-group variation rather than collapsing identities into stereotypes.
 
-### [TinyTroupe: An LLM-powered Multiagent Persona Simulation Toolkit](https://arxiv.org/pdf/2507.09788v3)(https://microsoft.github.io/TinyTroupe/)
+### [TinyTroupe: An LLM-powered Multiagent Persona Simulation Toolkit](https://microsoft.github.io/TinyTroupe/) (Eliza_Fan)
 - TinyTroupe is an LLM-powered toolkit designed to simulate realistic human persona interactions within modular, event-driven environments. By orchestrating virtual agents with distinct personalities and memories, it automates the generation of high-quality, complex synthetic data for social and market research while providing mechanisms to correct simulation biases and align agent behavior. However, it believes problem-sovling AI systems generated agents lack wider human variabilities and real world context.
 - Synthetic generation of human agents with personalities, memories, actions and mental faculties. Agents can interact with each other. Scale up by distribution(population number, gender, leftwing/rightwing). The similated results are similar to real results. Use validators and propositions. Have stimulation steering and chaching mechanism, information encricher/extractor and result reducer. Benchmark: persona adherence, self-consistency, fluency, divergence, ideas qty.
 - Relevance: Generation of human agents. The goal of the projects.
 
+### [AI Town](https://github.com/a16z-infra/ai-town?utm_source=chatgpt.com) (Eliza_Fan)
+- An open-source implementation of a persistent multi-agent virtual town where LLM-powered characters interact, build memories, form relationships, and generate emergent social behaviors over time.
+- Combines persona profiles, long-term memory, world state management, and agent planning/action loops to support continuous simulation rather than single-turn interactions.
+- Relevant to MatrAIx as a reference architecture for generating long-horizon user trajectories, modeling social influence, and studying how personas evolve through repeated interactions in shared environments.
+
 ---
 
 ## 🧱 Task 1 — Schema & Domain Design
+**Owner(s):** @Yunze Xiao @Eliza_Fan, @Xiaoyi-Liu, @brihijoshi (add more as needed)
 
 The schema blocks everything else, so settle it first. **Don't over-explore** — define attributes from understanding of the target domains/tasks (limited-scope exploration).
 
@@ -247,9 +253,6 @@ Emit each persona in the Task-1 demographic-slice schema (structured fields + na
 4. **Behavioral sensitivity (cheap)** — vary **one** demographic axis, hold others fixed, generate persona-conditioned responses on a **tiny** task set, measure shift with cheap proxies (**HumT** + surface stats — length / markdown% / em-dash% / assistant-phrase% — à la ODYSSIM, plus task-specific checks).
    - Output: a **ranked list of which demographic axes actually move behavior** → feeds back into Step 2's coarsening and the schema-keep decision.
 
-
-**Owner(s):** @Yunze Xiao @Eliza_Fan, @Xiaoyi-Liu, @name3_ (add more as needed)
-
 ---
 
 ## 🏗️ Task 2 — MatrAIxPersona-8B Data Construction
@@ -258,9 +261,9 @@ Build the raw persona pool through four complementary sources, all conforming to
 
 | # | Subtask | Description | Owner(s) |
 |---|---------|-------------|----------|
-| 2.1 | 📥 **Collect open-source datasets** | Gather existing persona datasets (from the related work), clean and normalize into the MatrAIx schema. | _@name1, @name2, @name3_ |
-| 2.2 | 🧪 **Heuristic + synthetic generation** | Per-domain attribute combination + generation with multiple strong models (GPT, Claude, DeepSeek). Seed with real-world demographic priors for realism. | _@name1, @name2, @name3_ |
-| 2.3 | 🧑 **Personas from real human info** | Build personas seeded by public/real signals (public figures, social profiles, chat/conversation data), properly anonymized. | _@name1, @name2, @name3_ |
+| 2.1 | 📥 **Collect open-source datasets** | Gather existing persona datasets (from the related work), clean and normalize into the MatrAIx schema. | @Xiaoyi-Liu, @AravindMohan10, @name3_ |
+| 2.2 | 🧪 **Heuristic + synthetic generation** | Per-domain attribute combination + generation with multiple strong models (GPT, Claude, DeepSeek). Seed with real-world demographic priors for realism. | @ElegantLin, @AravindMohan10, @brihijoshi @isgla |
+| 2.3 | 🧑 **Personas from real human info** | Build personas seeded by public/real signals (public figures, social profiles, chat/conversation data), properly anonymized. | @Laerdon Kim, @brihijoshi, @name3_ |
 | 2.4 | 📝 **Questionnaire → volunteers** | Design a questionnaire, collect volunteer data, and expand each response into a full persona via synthetic augmentation. | _@name1, @name2, @name3_ |
 | 2.5 | 🔁 **Continuous-growth intake** | Let contributors keep adding personas over time (upload conversations, fill/extend a profile) so the pool grows; gate on the Task 3 quality bar. | _@name1, @name2, @name3_ |
 
@@ -269,7 +272,7 @@ Build the raw persona pool through four complementary sources, all conforming to
 ---
 
 ## 🧹 Task 3 — Data Quality Filtering & Evaluation
-
+**Owner(s):** @Eliza_Fan, @Yun Shen, @name3_ (add more as needed)
 Turn the raw pool into clean, trustworthy data, and *measure* that quality (our differentiator). This is a **foundation** task — we generate a lot, then filter hard.
 
 **Filtering**
@@ -284,12 +287,10 @@ Turn the raw pool into clean, trustworthy data, and *measure* that quality (our 
 - **Fidelity** — do persona-conditioned agents actually *behave* in line with the profile? The harder, more important axis (links to MatrAIxPersonaBench, Task 4).
 - **Persona-factor analysis** — find which attributes actually shift agent action distributions (heatmap/matrix) to justify which dimensions are worth keeping. Note: behavior testing is expensive (API cost) — design it cheaply.
 
-**Owner(s):** @Eliza_Fan, @name2, @name3_ (add more as needed)
-
 ---
 
 ## 📊 Task 4 — MatrAIxPersonaBench
-
+**Owner(s):** @Eliza_Fan, @Keyang Xuan, @Wenkai Li, @isgla (add more as needed)
 Build the coreset for benchmarking **persona simulation quality**. For each persona, derive concrete tasks + evaluation tied to specific profile attributes.
 
 - For each persona → generate task(s) targeting one or more attributes.
@@ -297,8 +298,6 @@ Build the coreset for benchmarking **persona simulation quality**. For each pers
 - Cover multiple aspects (demographics, personality, preferences, behavior, communication).
 
 > 🧩 Example: profile says *"dislikes comments in code"* → task: ask the agent (as this persona) to write a function → eval: check whether the output contains comments.
-
-**Owner(s):** @Eliza_Fan, @Keyang Xuan, @Wenkai Li (add more as needed)
 
 ---
 
@@ -315,14 +314,12 @@ A train-oriented coreset. **Goal: train a persona-conditioned model** that, give
 ---
 
 ## ✅ Task 6 — Human Validation
-
+**Owner(s):** _@name1, @name2, @name3_ (add more as needed)
 A small human study to validate data quality and benchmark ground-truth.
 
 - Sample a subset (a few hundred personas / bench tasks).
 - Annotators rate each on a simple 1–5 rubric: **realism**, **internal consistency**, and (for bench) **correctness of the expected behavior / eval**.
 - Report inter-annotator agreement; use results to calibrate the LLM-judge.
-
-**Owner(s):** _@name1, @name2, @name3_ (add more as needed)
 
 ---
 
