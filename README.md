@@ -29,7 +29,7 @@ MatrAIx pairs **synthetic personas** with **LLM agents** in reproducible Harbor 
 
 ## 🚀 Quick start
 
-**Prerequisites:** [Docker](https://docs.docker.com/get-docker/) and [uv](https://docs.astral.sh/uv/). An API key is only needed for the persona example below — see [`.env.example`](.env.example) and [choosing-an-agent.md](docs/environments/choosing-an-agent.md).
+**Prerequisites:** [Docker](https://docs.docker.com/get-docker/) and [uv](https://docs.astral.sh/uv/). An API key is only needed for the examples below — see [`.env.example`](.env.example) and [choosing-an-agent.md](docs/environments/choosing-an-agent.md).
 
 ```bash
 git clone https://github.com/matraix-ai/matraix.git && cd matraix
@@ -42,12 +42,20 @@ uv sync
 uv run harbor run -c configs/jobs/example-job-recipe/harbor-smoke-local.yaml
 ```
 
-**Example** — one persona, one survey with a real LLM agent:
+**Example (Application)** — one persona, open-text product survey (product metrics, no grounding oracle):
 
 ```bash
 export ANTHROPIC_API_KEY="sk-ant-..."   # if not already in your shell
 
 uv run harbor run -c configs/jobs/example-job-recipe/appSim-example-survey-local.yaml
+```
+
+**Example (Persona)** — same persona, **bench** survey (MCQ grounding check on `economic_motivation`):
+
+```bash
+export ANTHROPIC_API_KEY="sk-ant-..."   # if not already in your shell
+
+uv run harbor run -c configs/jobs/example-job-recipe/personaBench-example-survey-local.yaml
 ```
 
 **View** — inspect runs (`jobs/` includes examples you can browse without re-running):
