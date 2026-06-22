@@ -503,6 +503,23 @@ class DockerEnvironment(BaseEnvironment):
                 "in task.toml to match the image."
             )
 
+    async def _local_docker_image_exists(self, image_name: str) -> bool:
+        """Return True when a locally tagged image is available for reuse."""
+        try:
+            proc = await asyncio.create_subprocess_exec(
+                "docker",
+                "image",
+                "inspect",
+                image_name,
+                stdout=asyncio.subprocess.DEVNULL,
+                stderr=asyncio.subprocess.DEVNULL,
+            )
+        except FileNotFoundError:
+            return False
+
+        await proc.wait()
+        return proc.returncode == 0
+
     async def start(self, force_build: bool):
         # Volume declarations always come from the runtime override now —
         # the static base compose declares none. Write before any compose
@@ -526,7 +543,15 @@ class DockerEnvironment(BaseEnvironment):
                 self.environment_name, asyncio.Lock()
             )
             async with lock:
-                await self._run_docker_compose_command(["build"])
+                if force_build or not await self._local_docker_image_exists(
+                    self._main_image_name
+                ):
+                    await self._run_docker_compose_command(["build"])
+                else:
+                    self.logger.debug(
+                        "Skipping docker compose build; image %s already exists locally",
+                        self._main_image_name,
+                    )
 
         # Validate image OS after build/pull but before container start.
         image_to_check = (

@@ -178,7 +178,7 @@ class PersonaComputer1(PersonaMixin, BaseAgent):
         environment: BaseEnvironment,
         context: AgentContext,
     ) -> None:
-        self._write_persona_meta()
+        await self._prepare_persona_trial(environment)
         rendered = self._render_persona_instruction(instruction)
         delegate = self._get_delegate(environment)
         await delegate.run(rendered, environment, context)

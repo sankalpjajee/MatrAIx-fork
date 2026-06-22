@@ -39,7 +39,7 @@ class PersonaBrowserUse(PersonaMixin, BrowserUseHarborAgent):
         environment: BaseEnvironment,
         context: AgentContext,
     ) -> None:
-        self._write_persona_meta()
+        await self._prepare_persona_trial(environment)
         self._extra_env = {
             **getattr(self, "_extra_env", {}),
             "PERSONA_SYSTEM": self._render_persona_system(),

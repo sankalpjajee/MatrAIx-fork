@@ -11,27 +11,28 @@
 "area:tasks:survey":
   - changed-files:
       - any-glob-to-any-file:
-          - tasks/survey/**
+          - application/tasks/example-survey_**
 
 "area:tasks:chat":
   - changed-files:
       - any-glob-to-any-file:
-          - tasks/chat/**
+          - application/tasks/example-chat-**
 
 "area:tasks:web":
   - changed-files:
       - any-glob-to-any-file:
-          - tasks/web/**
+          - application/tasks/example-web-**
 
 "area:tasks:computer-use":
   - changed-files:
       - any-glob-to-any-file:
-          - tasks/computer-use/**
+          - application/tasks/example-computer-use-**
 
 "area:applications":
   - changed-files:
       - any-glob-to-any-file:
-          - tasks/README.md
+          - application/README.md
+          - application/tasks/README.md
           - docs/applications/**
 
 # MatrAIx — Environment team
@@ -43,7 +44,8 @@
 "area:reporting":
   - changed-files:
       - any-glob-to-any-file:
-          - reporting/**
+          - application/reporting/**
+          - persona/reporting/**
 
 # Harbor runtime
 "area:agents":

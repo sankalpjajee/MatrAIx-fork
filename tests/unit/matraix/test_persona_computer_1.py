@@ -13,6 +13,8 @@ from matraix.agents.persona.computer_1 import (
 
 
 class _FakeDockerEnvironment:
+    upload_file = AsyncMock()
+
     def type(self):
         return "docker"
 
@@ -20,6 +22,7 @@ class _FakeDockerEnvironment:
 def _use_computer_stub(platform: str) -> MagicMock:
     env = MagicMock()
     env._platform = platform
+    env.upload_file = AsyncMock()
     env.__class__ = UseComputerEnvironment
     return env
 
@@ -31,7 +34,7 @@ def repo_root() -> Path:
 
 @pytest.fixture
 def personas_0042(repo_root: Path) -> Path:
-    return repo_root / "persona" / "examples" / "persona_0042.yaml"
+    return repo_root / "persona" / "datasets" / "bench-dev-1000" / "persona_0042.yaml"
 
 
 def test_resolve_use_computer_macos() -> None:

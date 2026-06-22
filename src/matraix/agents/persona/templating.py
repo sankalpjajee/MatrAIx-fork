@@ -7,6 +7,7 @@ from pathlib import Path
 from jinja2 import Environment, FileSystemLoader, StrictUndefined, TemplateNotFound
 
 from matraix.agents.persona.loader import Persona
+from matraix.persona_dimension_catalog import build_template_context_extras
 
 PERSONA_SYSTEM_TEMPLATE = "persona_system.md.j2"
 PERSONA_INSTRUCTION_TEMPLATE = "persona_instruction.md.j2"
@@ -57,4 +58,7 @@ def render_persona_template(
     except TemplateNotFound as exc:
         raise FileNotFoundError(f"Persona template not found: {template_path}") from exc
 
-    return template.render(**persona.template_context(instruction=instruction)).strip()
+    return template.render(
+        **persona.template_context(instruction=instruction),
+        **build_template_context_extras(persona.dimensions),
+    ).strip()

@@ -6,10 +6,10 @@ MatrAIx supports **four Docker / no-use.computer** ways to run persona web scena
 
 | Mode | Task example | Agent | Environment | When to use |
 |------|----------------|-------|-------------|-------------|
-| **Playwright** | `tasks/web/books-interest-playwright/` | `persona-openhands-sdk` | `docker` + `network_mode = "public"` | Terminal + Python Playwright; CI-friendly, lower cost |
-| **browser-use** | `tasks/web/books-interest-browser-use/` | `persona-browser-use` | `docker` + `network_mode = "public"` | Dedicated browser agent loop; persona via `extend_system_message` |
-| **Cocoa** | `tasks/web/books-interest-cocoa/` | `persona-cocoa` | `docker` + AIO Sandbox image + `network_mode = "public"` | Unified browser + shell + files in one container |
-| **CUA** | `tasks/web/books-interest-linux-cua/` | `persona-computer-1` | `docker` | Screenshot loop in Linux Xvfb; no `USE_COMPUTER_API_KEY` |
+| **Playwright** | `application/tasks/example-web-playwright_books-interest/` | `persona-openhands-sdk` | `docker` + `network_mode = "public"` | Terminal + Python Playwright; CI-friendly, lower cost |
+| **browser-use** | `application/tasks/example-web-browser-use_books-interest/` | `persona-browser-use` | `docker` + `network_mode = "public"` | Dedicated browser agent loop; persona via `extend_system_message` |
+| **Cocoa** | `application/tasks/example-web-cocoa_books-interest/` | `persona-cocoa` | `docker` + AIO Sandbox image + `network_mode = "public"` | Unified browser + shell + files in one container |
+| **CUA** | `application/tasks/example-web-cua_books-interest/` | `persona-computer-1` | `docker` | Screenshot loop in Linux Xvfb; no `USE_COMPUTER_API_KEY` |
 
 ## Shared submission contract
 
@@ -48,14 +48,14 @@ export LLM_API_KEY="${ANTHROPIC_API_KEY}"
 uv run harbor run \
   -a persona-openhands-sdk \
   -m anthropic/claude-sonnet-4-6 \
-  --ak persona_path=persona/examples/persona_0042.yaml \
-  -p tasks/web/books-interest-playwright
+  --ak persona_path=persona/datasets/bench-dev-100/persona_0042.yaml \
+  -p application/tasks/example-web-playwright_books-interest
 ```
 
 Oracle (no LLM):
 
 ```bash
-uv run harbor run -p tasks/web/books-interest-playwright -a oracle
+uv run harbor run -p application/tasks/example-web-playwright_books-interest -a oracle
 ```
 
 **task.toml:** set `[environment].network_mode = "public"` and `[agent].network_mode = "public"`.
@@ -71,13 +71,13 @@ uv run harbor run -p tasks/web/books-interest-playwright -a oracle
 **API key:** `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, or `LLM_API_KEY` (mapped by model provider).
 
 ```bash
-uv run harbor run -c configs/jobs/persona-web-browser-use-local.yaml
+uv run harbor run -c configs/jobs/example-job-recipe/appSim-example-web-browser-use-local.yaml
 ```
 
 Oracle:
 
 ```bash
-uv run harbor run -p tasks/web/books-interest-browser-use -a oracle
+uv run harbor run -p application/tasks/example-web-browser-use_books-interest -a oracle
 ```
 
 ## Cocoa mode (AIO Sandbox)
@@ -89,12 +89,12 @@ uv run harbor run -p tasks/web/books-interest-browser-use -a oracle
 **Cons:** Heavier base image than Playwright-only tasks; task Dockerfiles should extend the AIO Sandbox image.
 
 ```bash
-uv run harbor run -c configs/jobs/persona-web-cocoa-local.yaml
+uv run harbor run -c configs/jobs/example-job-recipe/appSim-example-web-cocoa-local.yaml
 ```
 
 ## CUA mode (Chromium + computer-use)
 
-**How it works:** A real desktop browser window in Docker (Xvfb + XFCE); each turn the model receives a **screenshot** and returns actions (`navigate`, `click`, `scroll`, …). Same stack as `tasks/computer-use/linux-notification-preferences/`.
+**How it works:** A real desktop browser window in Docker (Xvfb + XFCE); each turn the model receives a **screenshot** and returns actions (`navigate`, `click`, `scroll`, …). Same stack as `application/tasks/example-computer-use-linux_notification-preferences/`.
 
 **Pros:** Closest to end-user behavior among Docker web modes; no `USE_COMPUTER_API_KEY`.
 
@@ -103,16 +103,16 @@ uv run harbor run -c configs/jobs/persona-web-cocoa-local.yaml
 ```bash
 uv sync --extra computer-1
 export ANTHROPIC_API_KEY=...
-uv run harbor run -c configs/jobs/persona-web-linux-cua-local.yaml
+uv run harbor run -c configs/jobs/example-job-recipe/appSim-example-web-linux-cua-local.yaml
 ```
 
 Oracle (writes submission file directly):
 
 ```bash
-uv run harbor run -p tasks/web/books-interest-linux-cua -a oracle
+uv run harbor run -p application/tasks/example-web-cua_books-interest -a oracle
 ```
 
-For **macOS / iOS** screenshot CUA (system settings, not live web), use `tasks/computer-use/` with `-e use-computer` — see [choosing-an-agent.md](../environments/choosing-an-agent.md).
+For **macOS / iOS** screenshot CUA (system settings, not live web), use `application/tasks/example-computer-use-` with `-e use-computer` — see [choosing-an-agent.md](../environments/choosing-an-agent.md).
 
 ## What we do *not* treat as a web mode
 
@@ -120,7 +120,7 @@ For **macOS / iOS** screenshot CUA (system settings, not live web), use `tasks/c
 |----------|--------|
 | [Skyvern](https://github.com/Skyvern-AI/skyvern) | No `persona-skyvern` — AGPL-3.0 does not fit this Apache-2.0 repo; use browser-use or CUA for vision-first browsing. |
 | `curl` / `wget` only | Not a web interaction mode — no JS, no layout. OK for smoke, not documented as persona web browsing. |
-| Mock HTML sidecar | Deprecated for MatrAIx web examples; use live URL tasks under `tasks/web/`. |
+| Mock HTML sidecar | Deprecated for MatrAIx web examples; use live URL tasks under `application/tasks/example-web-`. |
 
 ## Authoring a new live-web application
 
@@ -135,9 +135,9 @@ For **macOS / iOS** screenshot CUA (system settings, not live web), use `tasks/c
 
 | Task | Mode |
 |------|------|
-| `tasks/web/books-interest-playwright/` | Playwright + live URL |
-| `tasks/web/books-interest-browser-use/` | browser-use + live URL |
-| `tasks/web/books-interest-cocoa/` | Cocoa + live URL |
-| `tasks/web/books-interest-linux-cua/` | CUA + live URL (Docker) |
+| `application/tasks/example-web-playwright_books-interest/` | Playwright + live URL |
+| `application/tasks/example-web-browser-use_books-interest/` | browser-use + live URL |
+| `application/tasks/example-web-cocoa_books-interest/` | Cocoa + live URL |
+| `application/tasks/example-web-cua_books-interest/` | CUA + live URL (Docker) |
 
 See also [task-guide.md](./task-guide.md) and [choosing-an-agent.md](../environments/choosing-an-agent.md).

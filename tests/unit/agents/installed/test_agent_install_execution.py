@@ -38,11 +38,32 @@ class TestAgentInstallExecution:
     """Test that agent install() methods execute without errors against a mock environment."""
 
     @pytest.mark.asyncio
+    async def test_claude_code_skips_install_when_already_available(self, temp_dir):
+        agent = ClaudeCode(logs_dir=temp_dir)
+        environment = AsyncMock()
+        environment.exec.return_value = AsyncMock(return_code=0, stdout="", stderr="")
+
+        await agent.install(environment)
+
+        assert environment.exec.call_count == 1
+        assert (
+            environment.exec.call_args.kwargs["command"]
+            == ClaudeCode._INSTALL_CHECK_COMMAND
+        )
+
+    @pytest.mark.asyncio
     async def test_claude_code_installs_procps_for_tree_kill(self, temp_dir):
         """Claude Code needs ps/pgrep for node-tree-kill process cleanup."""
         agent = ClaudeCode(logs_dir=temp_dir)
         environment = AsyncMock()
-        environment.exec.return_value = AsyncMock(return_code=0, stdout="", stderr="")
+
+        def exec_side_effect(*args, **kwargs):
+            command = kwargs.get("command", "")
+            if command == ClaudeCode._INSTALL_CHECK_COMMAND:
+                return AsyncMock(return_code=1, stdout="", stderr="")
+            return AsyncMock(return_code=0, stdout="", stderr="")
+
+        environment.exec.side_effect = exec_side_effect
 
         await agent.install(environment)
 
@@ -70,6 +91,19 @@ class TestAgentInstallExecution:
                     command = kwargs.get("command", "")
                     return AsyncMock(
                         return_code=1 if command == Codex._INSTALL_CHECK_COMMAND else 0,
+                        stdout="",
+                        stderr="",
+                    )
+
+                environment.exec.side_effect = exec_side_effect
+            elif agent_class is ClaudeCode:
+
+                def exec_side_effect(*args, **kwargs):
+                    command = kwargs.get("command", "")
+                    return AsyncMock(
+                        return_code=(
+                            1 if command == ClaudeCode._INSTALL_CHECK_COMMAND else 0
+                        ),
                         stdout="",
                         stderr="",
                     )

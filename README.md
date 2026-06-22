@@ -13,24 +13,44 @@ MatrAIx pairs **synthetic personas** with **LLM agents** in reproducible Harbor 
 
 ---
 
+## 🏗️ Architecture
+
+![MatrAIx architecture](docs/assets/matraix-architecture.png)
+
+| Team | Delivers | Docs |
+|------|----------|------|
+| 🧬 **Persona** | Persona cards, datasets, adherence benchmarks | [docs/personas/](docs/personas/README.md) |
+| 🌐 **Environment** | Harbor runtime, agents, jobs, viewer | [docs/environments/](docs/environments/README.md) |
+| 📋 **Application** | Simulation scenarios (survey, chat, web, computer-use) | [docs/applications/](docs/applications/README.md) |
+
+**Agents & API keys (Application + Environment):** [choosing-an-agent.md](docs/environments/choosing-an-agent.md)
+
+---
+
 ## 🚀 Quick start
 
-**Prerequisites:** [uv](https://docs.astral.sh/uv/), Docker (for most tasks). Persona runs need API keys in your **shell environment** — see [`.env.example`](.env.example) for variable names ([choosing-an-agent.md](docs/environments/choosing-an-agent.md)).
+**Prerequisites:** [Docker](https://docs.docker.com/get-docker/) and [uv](https://docs.astral.sh/uv/). An API key is only needed for the persona example below — see [`.env.example`](.env.example) and [choosing-an-agent.md](docs/environments/choosing-an-agent.md).
 
 ```bash
 git clone https://github.com/matraix-ai/matraix.git && cd matraix
 uv sync
-
-# Persona run — set ANTHROPIC_API_KEY in your shell (or ~/.zshrc) if not already
-# First run builds the task Docker image; may take a few minutes.
-uv run harbor run \
-  -a persona-claude-code \
-  -m anthropic/claude-sonnet-4-6 \
-  --ak persona_path=persona/examples/persona_0042.yaml \
-  -p tasks/survey/product-feedback
 ```
 
-Inspect results (`jobs/` includes example runs you can browse without re-running):
+**Smoke** (no API key) — Harbor `hello-world` task; checks Docker and the runtime (first run builds the image; may take a few minutes):
+
+```bash
+uv run harbor run -c configs/jobs/example-job-recipe/harbor-smoke-local.yaml
+```
+
+**Example** — one persona, one survey with a real LLM agent:
+
+```bash
+export ANTHROPIC_API_KEY="sk-ant-..."   # if not already in your shell
+
+uv run harbor run -c configs/jobs/example-job-recipe/appSim-example-survey-local.yaml
+```
+
+**View** — inspect runs (`jobs/` includes examples you can browse without re-running):
 
 ```bash
 uv run harbor view jobs --build
@@ -38,53 +58,68 @@ uv run harbor view jobs --build
 
 > Use **`uv run harbor`** — a globally installed `harbor` may be an older build without `persona-*` agents.
 
----
-
-## 🏗️ Architecture
-
-| Team | Delivers | Docs | Repo |
-|------|----------|------|------|
-| 🧬 **Persona** | model → generator → **persona card** | [docs/personas/](docs/personas/README.md) | `persona/` |
-| 🌐 **Environment** | Harbor: agents → instances (4 forms) → verifier → outputs | [docs/environments/](docs/environments/README.md) | `src/harbor/`, `src/matraix/`, `configs/jobs/` |
-| 📋 **Application** | app research → **task** (incl. eval design) | [docs/applications/](docs/applications/README.md) | `tasks/` |
-
-![MatrAIx architecture](docs/assets/matraix-architecture.png)
-
-**Persona card** + **task** enter **Harbor**. The agent runs in one of four **environment instances** (survey · chat · web · computer-use). **Artifacts / trajectories** → **verifier** → **metrics, reports, benchmarks** — all inside the Environment runtime (`src/harbor/`, task `tests/`).
+Step-by-step guides: [Application](docs/applications/getting-started.md) · [Persona](docs/personas/README.md) · [Environment](docs/environments/README.md)
 
 ---
 
 ## 💬 Join the project
 
-We are actively looking for collaborators across Persona, Environment, and Application — research, engineering, data, and evaluation.
+We welcome collaborators across research, product, data, and engineering.
 
-### 1. Join Discord
+### 1. Say hello
 
 [![Discord](https://img.shields.io/badge/Discord-join%20MatrAIx-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/vruP88PTZ)
 
-Chat with the team, ask questions, and find collaborators.
-
-### 2. Fill out the interest form
-
 [![Google Form](https://img.shields.io/badge/Google%20Form-join%20MatrAIx-4285F4?style=for-the-badge&logo=googleforms&logoColor=white)](https://forms.gle/hwEHng5HGWRqcJue9)
 
-Share your background and interests. We read every submission and will get back to you as soon as possible.
+### 2. Read docs and pick a team (or teams)
+
+| Team | If you care about… | Start here |
+|------|-------------------|------------|
+| 🧬 **Persona** | Persona schema and data, persona generator, persona grounding | [docs/personas/](docs/personas/README.md) |
+| 📋 **Application** | Product scenarios, task design, product user metrics design | [getting started](docs/applications/getting-started.md) |
+| 🌐 **Environment** | Environment infra, engineering, runtime, back and front end | [docs/environments/](docs/environments/README.md) |
+
+All teams that run simulations should skim [choosing-an-agent.md](docs/environments/choosing-an-agent.md).
+
+### 3. Do one hands-on pass
+
+Complete your team’s getting-started guide (or the smoke run above), then browse results with `harbor view`.
+
+### 4. Contribute
+
+Discuss on **Discord** or open a **GitHub issue** before a large PR — [contributing guide](docs/contributing.md).
 
 ---
 
 ## 📁 Repository layout
 
 ```text
-├── src/matraix/          # Persona agents & MatrAIx extensions
-├── src/harbor/           # Execution runtime (CLI, environments, viewer API)
-├── persona/             # Persona YAML data
-├── tasks/                # Application task simulation
-├── examples/tasks/       # Harbor hello-world examples
-├── configs/jobs/         # Job YAML templates
-├── jobs/                 # Run outputs (example persona-*-local runs checked in)
-├── packages/rewardkit/   # Verifier / LLM-judge toolkit
-├── apps/viewer/          # Web UI for harbor view
-└── docs/                 # Team documentation
+# —— All teams ——
+docs/                    # Team documentation (personas/, environments/, applications/)
+jobs/                    # Run outputs (example runs checked in for harbor view)
+
+# —— Persona team ——
+persona/
+├── dimensions.json
+├── datasets/            # Persona YAML pools (bench-dev-2000, …)
+├── tasks/               # Persona-adherence Harbor tasks
+├── scripts/
+└── reporting/
+
+# —— Application team ——
+application/
+├── tasks/               # Executable scenarios (survey, chat, web, computer-use)
+├── scripts/
+└── reporting/
+
+# —— Environment team ——
+src/harbor/              # CLI, trial/job runtime, Docker/Modal/Daytona/… backends
+src/matraix/             # Persona agents (persona-claude-code, …)
+configs/jobs/            # Job YAML recipes (smoke, persona bench, application)
+packages/rewardkit/      # Verifier / LLM-judge toolkit
+apps/viewer/             # Web UI for harbor view
+examples/tasks/          # Upstream Harbor hello-world (reference)
 ```
 
 ---
@@ -118,13 +153,9 @@ MatrAIx is intended to produce two initial papers, with more to follow as the pr
 
 **Timeline.** Both papers target completion over the summer of 2026.
 
-As the project grows, we expect **additional papers** — for example, more advanced persona-agent methods, evaluation methodology, and broader, more comprehensive simulation applications.
-
 ---
 
 ## 🤝 Contributing
-
-We welcome contributions in all three areas:
 
 - [Contributing guide](docs/contributing.md)
 - [Persona team](docs/personas/README.md) · [Environment](docs/environments/README.md) · [Application](docs/applications/README.md)

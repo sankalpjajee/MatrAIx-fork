@@ -427,6 +427,46 @@ class TestStartStaleContainerCleanup:
             ["up", "--detach", "--wait"],
         ]
 
+    async def test_start_skips_build_when_image_exists(self, temp_dir):
+        """start() should reuse an existing hb__ image without rebuilding."""
+        env_dir = temp_dir / "environment"
+        env_dir.mkdir()
+        (env_dir / "Dockerfile").write_text("FROM ubuntu:22.04\n")
+
+        trial_dir = temp_dir / "trial"
+        trial_dir.mkdir()
+        trial_paths = TrialPaths(trial_dir=trial_dir)
+        trial_paths.mkdir()
+
+        with patch.object(
+            DockerEnvironment, "_detect_windows_containers", return_value=False
+        ):
+            env = DockerEnvironment(
+                environment_dir=env_dir,
+                environment_name="test-task",
+                session_id="test-task__abc123",
+                trial_paths=trial_paths,
+                task_env_config=EnvironmentConfig(),
+            )
+        env._validate_daemon_mode = lambda: None
+        env._validate_image_os = AsyncMock(return_value=None)
+        env._local_docker_image_exists = AsyncMock(return_value=True)
+
+        calls = []
+
+        async def track_calls(command, **kwargs):
+            calls.append(command)
+            return ExecResult(return_code=0)
+
+        env._run_docker_compose_command = AsyncMock(side_effect=track_calls)
+
+        await env.start(force_build=False)
+
+        assert calls == [
+            ["down", "--remove-orphans"],
+            ["up", "--detach", "--wait"],
+        ]
+
     async def test_start_proceeds_when_down_fails(self, docker_env):
         """start() should still attempt 'up -d' even if 'down' fails."""
         calls = []

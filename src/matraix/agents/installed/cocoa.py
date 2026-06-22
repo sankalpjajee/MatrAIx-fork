@@ -19,7 +19,7 @@ _COCOA_ROOT = "/opt/cocoa-agent"
 class CocoaHarborAgent(BaseInstalledAgent):
     """Run CocoaAgent against the AIO Sandbox baked into the task image."""
 
-    SUPPORTS_ATIF: bool = False
+    SUPPORTS_ATIF: bool = True
     _OUTPUT_FILENAME = "cocoa.txt"
     _TRAJECTORY_FILENAME = "trajectory.json"
     _RUNNER_PATH = "/installed-agent/cocoa_runner.py"
@@ -92,11 +92,31 @@ class CocoaHarborAgent(BaseInstalledAgent):
             return
         try:
             data = json.loads(trajectory_file.read_text(encoding="utf-8"))
-            context.metadata = {**(context.metadata or {}), "cocoa": data}
-            cost = data.get("api_cost_stats") or {}
-            context.cost_usd = cost.get("total_cost_usd")
-            context.n_input_tokens = int(cost.get("total_input_tokens", 0) or 0)
-            context.n_output_tokens = int(cost.get("total_output_tokens", 0) or 0)
+            summary = data
+            if isinstance(data, dict):
+                extra = data.get("extra")
+                if isinstance(extra, dict) and isinstance(extra.get("cocoa"), dict):
+                    summary = extra["cocoa"]
+                final_metrics = data.get("final_metrics") or {}
+                if isinstance(final_metrics, dict):
+                    context.cost_usd = final_metrics.get("total_cost_usd")
+                    context.n_input_tokens = int(
+                        final_metrics.get("total_prompt_tokens", 0) or 0
+                    )
+                    context.n_output_tokens = int(
+                        final_metrics.get("total_completion_tokens", 0) or 0
+                    )
+                    context.n_cache_tokens = int(
+                        final_metrics.get("total_cached_tokens", 0) or 0
+                    )
+                elif isinstance(data.get("api_cost_stats"), dict):
+                    cost = data["api_cost_stats"]
+                    context.cost_usd = cost.get("total_cost_usd")
+                    context.n_input_tokens = int(cost.get("total_input_tokens", 0) or 0)
+                    context.n_output_tokens = int(
+                        cost.get("total_output_tokens", 0) or 0
+                    )
+            context.metadata = {**(context.metadata or {}), "cocoa": summary}
         except (json.JSONDecodeError, OSError, TypeError, ValueError):
             pass
 

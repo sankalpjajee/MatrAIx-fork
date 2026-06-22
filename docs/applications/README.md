@@ -2,11 +2,15 @@
 
 > Part of [MatrAIx](../../README.md). The Application team owns **MatrAIx simulation scenarios**.
 
+## New here?
+
+**[Getting started](./getting-started.md)** — install Docker, set an API key, run one survey with a persona, scale to 10 personas, open `harbor view`. Written for contributors who are not full-time engineers.
+
 ## Paths in this repository
 
 | Kind | Path |
 |------|------|
-| Executable tasks | `tasks/{survey,chat,web,computer-use}/` |
+| Executable tasks | `application/tasks/{survey,chat,web,computer-use}/` |
 | Team docs | `docs/applications/` (this directory) |
 | Detailed team plan | [PLAN.md](./PLAN.md) |
 | Hello-world examples | `examples/tasks/` |
@@ -65,16 +69,17 @@ Known limitations:
 
 ## To write (Harbor implementation)
 
-- [x] [`task-guide.md`](./task-guide.md) — instruction / environment / separate verifier / rewardkit
+- [x] [`getting-started.md`](./getting-started.md) — Docker → first survey → batch → create a task
+- [x] [`task-guide.md`](./task-guide.md) — application task folder structure
 - [x] [`web-interaction.md`](./web-interaction.md) — Playwright vs CUA for live-web tasks
-- [x] Reference scenarios under `tasks/` — see [tasks/README.md](../../tasks/README.md)
-- [ ] Adapter output → root `tasks/` normalization checklist
+- [x] Reference scenarios under `application/` — see [application/README.md](../../application/README.md)
+- [ ] Adapter output → root `application/` normalization checklist
 
 ## Contributing
 
-- new task scenarios under `tasks/`
+- new task scenarios under `application/`
 - domain-specific benchmarks
 - evaluation metrics (`packages/rewardkit/`)
-- analysis templates (`reporting/`)
+- analysis templates (`application/reporting/`, `persona/reporting/`)
 
 See [contributing.md](../contributing.md).

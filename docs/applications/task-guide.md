@@ -1,186 +1,75 @@
-# MatrAIx task authoring guide
+# Application task structure
 
-How to build MatrAIx simulation tasks on Harbor.
+A MatrAIx application task is a Harbor task folder under `application/tasks/`. Copy the closest `example-*` task for your form (survey, chat, web, computer-use) into `application/tasks/<your-task-name>/`, then edit these parts.
 
-## Layout
+## Folder layout
 
-```
-tasks/<form>/<scenario>/
-├── task.toml           # timeouts, resources, metadata
-├── instruction.md      # scenario (what to do) — NOT persona traits
-├── environment/        # agent container (Dockerfile or compose)
-├── tests/              # verifier (test.sh + helpers)
-├── solution/           # optional oracle (solve.sh)
-└── README.md           # suggested agent, example run
-```
-
-**Forms:** `survey`, `chat`, `web`, `computer-use` (see [tasks/README.md](../../tasks/README.md)).
-
-## Persona vs task
-
-| Layer | Where | Content |
-|-------|-------|---------|
-| **Who** | `persona/examples/*.yaml` + `-a persona-*` | Demographics, psychology, communication style |
-| **What** | `instruction.md` | Scenario, goals, output format |
-
-Do not put task scenarios in persona YAML. v1 personas use structured domains only.
-
-## instruction.md
-
-- State the goal and required output paths/formats.
-- **MatrAIx convention:** task inputs under `/app/input/`; agent submissions under `/app/output/` only.
-- Describe success without leaking verifier logic.
-- Keep tone neutral — the persona agent supplies voice and preferences.
-
-## environment/
-
-MatrAIx Docker task layout inside the container:
-
-```
-/app/
-├── input/     # seeded task assets (COPY from environment/)
-└── output/    # agent submissions only (collected to host)
+```text
+application/tasks/example-survey_product-feedback/
+├── task.toml           # Harbor config (timeouts, metadata, artifacts paths)
+├── instruction.md      # What the agent should do (scenario + output format)
+├── environment/        # Docker image + task input files
+│   ├── Dockerfile
+│   ├── docker-compose.yaml   # optional — chat/web sidecars
+│   └── …                     # files copied into /app/input/
+├── tests/              # Verifier — runs after the agent; scores output / trajectory
+│   ├── test.sh
+│   └── test_*.py       # optional helpers
+├── solution/           # optional — reference solution for CI smoke
+└── README.md           # notes for your team
 ```
 
-- **Docker** (default): `environment/Dockerfile` — survey, chat, web tasks.
-- **use-computer**: no Dockerfile; run with `-e use-computer` (see `tasks/computer-use/macos-notification-preferences/`).
-- Seed static assets (briefs, mock pages) via `COPY` into `/app/input/`.
-- Pre-create `/app/input/` and `/app/output/` in the Dockerfile.
+## The files
 
-Test interactively:
+### `task.toml`
 
-```bash
-harbor task start-env -p tasks/survey/product-feedback -e docker -a -i
-```
-
-## Verifier modes
-
-| Mode | When | Config |
-|------|------|--------|
-| **Shared** (default) | Verifier runs in agent container; inspects `/app/output` artifacts | `tests/test.sh` + pytest |
-| **Separate** | Hide verifier deps/keys from agent | `[verifier] environment_mode = "separate"` in `task.toml` |
-
-Smoke tasks used **shared** pytest verifiers during early development. Production MatrAIx tasks should use **separate verifier + rewardkit** so grading is isolated from the agent.
-
-## Reward Kit (production)
-
-For multi-criteria or LLM-judged persona adherence:
-
-```bash
-# tests/test.sh
-uvx --from harbor-rewardkit rewardkit /tests
-```
-
-See `skills/rewardkit` and `examples/tasks/reward-kit-example/`.
-
-## Persona agents
-
-| Form | Suggested agent |
-|------|-----------------|
-| survey, chat | `persona-claude-code` |
-| web | `persona-openhands-sdk`, `persona-browser-use`, `persona-cocoa`, or `persona-computer-1` (CUA) |
-| computer-use | `persona-computer-1` |
-
-```bash
-harbor run \
-  -a persona-claude-code \
-  -m anthropic/claude-sonnet-4-6 \
-  --ak persona_path=persona/examples/persona_0042.yaml \
-  -p tasks/survey/product-feedback
-```
-
-Chat examples: `tasks/chat/acme-support-api` (REST), `tasks/chat/acme-support-mcp` (MCP).
-
-Agent selection is **non-binding** in task READMEs — experimenters choose explicitly ([choosing-an-agent.md](../environments/choosing-an-agent.md)).
-
-## Job configs
-
-Batch local reference run:
-
-```bash
-uv run harbor run -c configs/jobs/persona-debug-local.yaml
-```
-
-Live web and computer-use have dedicated job YAMLs under `configs/jobs/` (see [web-interaction.md](./web-interaction.md)).
-
-## Artifacts (submission files on the host)
-
-Agent submissions live under `/app/output/`. Task inputs (briefs, mock pages) live in `/app/input/` and are not collected.
-
-Each MatrAIx Docker task declares the output directory in `task.toml`:
+Harbor reads this for **timeouts**, **CPU/memory**, **metadata** (`type`, `domain`, `tags`), and **which paths to collect** after a run:
 
 ```toml
 artifacts = ["/app/output"]
 ```
 
-After a run you should see e.g. `jobs/.../artifacts/app/output/survey_responses.json`. Alternatively, pass `--artifact /app/output` on the CLI or list paths under `artifacts:` in a job YAML (`examples/configs/artifacts-job.yaml`).
+Survey/chat/web Docker tasks usually declare `/app/output`. Computer-use tasks may use paths under `/tmp/matraix-.../` — follow the nearest `example-computer-use-*` task.
 
-Harbor also auto-collects `/logs/artifacts/` (volume mount) if you use that convention instead.
+### `instruction.md`
 
-### Chat with REST API (multi-turn)
+The **scenario**: what product or surface the agent sees, what to produce, and where to write it (`/app/output/...`).
 
-For conversational tasks where the agent uses `curl` or scripts, run a mock chatbot as a **compose sidecar** and document the base URL in `instruction.md` (e.g. `http://support-api:8000`).
+Persona traits do **not** go here — they come from `persona_path` at run time.
 
-See `tasks/chat/acme-support-api/`. Requires local **docker** (compose networking).
+### `environment/`
 
-### Chat with MCP (multi-turn)
+- **`Dockerfile`** — base image, extra dependencies, `COPY` assets into `/app/input/`, create `/app/output/`.
+- **Input files** — briefs, mock pages, survey questions, etc. (anything the agent reads but does not edit).
+- **`docker-compose.yaml`** — only when the task needs a **sidecar** (mock chatbot API, MCP server, …).
 
-For MCP tool calls instead of raw HTTP, declare the sidecar in `task.toml`:
+Check whether your scenario needs packages beyond the example Dockerfile (browsers, compose services, …).
 
-```toml
-[[environment.mcp_servers]]
-name = "acme-support"
-transport = "streamable-http"
-url = "http://support-bot:8000/mcp"
-```
+### `tests/`
 
-See `tasks/chat/acme-support-mcp/` and `examples/tasks/hello-mcp/`. Requires local **docker** (compose networking).
+Scripts Harbor runs **after** the agent finishes:
 
-### Web (live public sites)
+- **`test.sh`** — entry point; often calls pytest and writes `reward` to `/logs/verifier/reward.txt`.
+- **`test_*.py`** — check submission JSON/schema, and optionally **trajectory** fields (logs under `/logs/agent/`, artifacts, conversation transcripts).
 
-Contributors choose **Playwright** or **CUA** per application. Full guide: [web-interaction.md](./web-interaction.md).
+Design tests around what you need to **score** and what you want in **reports** later.
 
-| Mode | Task | Agent | Environment |
-|------|------|-------|-------------|
-| Playwright | `tasks/web/books-interest-playwright/` | `persona-openhands-sdk` | `docker`, `network_mode = "public"` |
-| browser-use | `tasks/web/books-interest-browser-use/` | `persona-browser-use` | `docker`, `network_mode = "public"` |
-| Cocoa | `tasks/web/books-interest-cocoa/` | `persona-cocoa` | `docker`, `network_mode = "public"` |
-| CUA | `tasks/web/books-interest-linux-cua/` | `persona-computer-1` | `docker` |
+## Conventions
 
-Playwright: set **`LLM_API_KEY`** on the host (`export LLM_API_KEY="$ANTHROPIC_API_KEY"`). See [choosing-an-agent.md](../environments/choosing-an-agent.md) and [web-interaction.md](./web-interaction.md).
+| Path in container | Purpose |
+|-------------------|---------|
+| `/app/input/` | Task materials (seeded from `environment/`) |
+| `/app/output/` | Agent submission (collected to host `jobs/.../artifacts/`) |
+| `/logs/agent/` | Agent trajectory / CLI logs |
 
-### Computer-use (real desktop / mobile)
+## Examples
 
-Desktop and mobile tasks use `-e use-computer` and **`persona-computer-1`**. Prefer **`/app/output/`** in instructions for web CUA tasks. On use-computer **macOS**, Harbor maps `/app` → `/Users/lume` in shell commands; verifiers should resolve both.
+| Form | Copy from |
+|------|-----------|
+| survey | `application/tasks/example-survey_product-feedback/` |
+| chat (REST) | `application/tasks/example-chat-api_support_chatbot/` |
+| chat (MCP) | `application/tasks/example-chat-mcp_support_chatbot/` |
+| web | `application/tasks/example-web-playwright_books-interest/` (also `browser-use`, `cocoa`, `cua` — see [web-interaction.md](./web-interaction.md)) |
+| computer-use | `application/tasks/example-computer-use-macos_notification-preferences/` (macOS / iOS / Linux) |
 
-Computer-use submission dirs live under `/tmp/matraix-.../` in the sandbox (not `/app/output/`). Declare them in `task.toml` so Harbor pulls them to the host after the trial:
-
-```toml
-artifacts = ["/tmp/matraix-macos-notification-preferences"]
-```
-
-- macOS: `tasks/computer-use/macos-notification-preferences/` (default `platform: macos`)
-- Mobile (iOS Simulator): `tasks/computer-use/ios-notification-preferences/` — pass `--ek platform=ios` or `configs/jobs/persona-computer-use-ios-local.yaml`; pin simulator via `[ios]` in `task.toml`
-
-## Oracle / CI
-
-Verify task structure without an LLM:
-
-```bash
-harbor run -p tasks/survey/product-feedback -a oracle
-```
-
-## Adapter → tasks/
-
-When importing external benchmarks via `adapters/`:
-
-1. Normalize to Harbor task layout under `tasks/<form>/`.
-2. Move scenario text to `instruction.md`; strip persona assumptions.
-3. Add `README.md` with domain + suggested agent.
-4. Keep upstream license notices in task README or `NOTICE` if required.
-
-## Related
-
-- [applications/README.md](./README.md)
-- [skills/create-task](../../skills/create-task/SKILL.md)
-- [docs/personas/README.md](../personas/README.md)
+Agent choice depends on the form — [choosing-an-agent.md](../environments/choosing-an-agent.md).

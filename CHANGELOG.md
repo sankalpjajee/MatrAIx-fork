@@ -9,7 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Added
 
 - Reference scenarios under `tasks/` (chat, web, computer-use) and job configs in `configs/jobs/`
-- `docs/applications/task-guide.md` and `configs/jobs/persona-debug-local.yaml`
+- `docs/applications/task-guide.md` and `configs/jobs/example-job-recipe/appSim-example-debug-local.yaml`
 - Tier 1 persona agents: `persona-claude-code`, `persona-computer-1`, `persona-openhands-sdk`
 - Persona YAML loader (`matraix.agents.persona`) and `persona_meta.json` trial metadata
 - Registered persona agents in Harbor `AgentName` + `AgentFactory`

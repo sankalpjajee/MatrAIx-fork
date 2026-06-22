@@ -1,9 +1,17 @@
-{# Shared Jinja macros for domain-organized persona rendering. #}
+{# Shared Jinja macros for persona rendering. #}
 
-{% macro render_list_items(items) -%}
-{% for item in items -%}
-- {{ item }}
+{% macro render_persona_narrative(paragraphs) -%}
+{% if paragraphs %}
+## Who you are
+
+The following is your background — read it as a biography and stay in character.
+
+{% for paragraph in paragraphs -%}
+{{ paragraph }}
+
 {% endfor -%}
+Stay in character according to all of the above.
+{% endif -%}
 {% endmacro %}
 
 {% macro render_demographics(d) -%}
@@ -45,7 +53,7 @@
 {% if p.motivation_drivers is defined and p.motivation_drivers %}
 - Motivation: {{ p.motivation_drivers | join(', ') }}
 {% endif -%}
-{% if p['values'] is defined and p['values'] %}
+{% if 'values' in p and p['values'] %}
 - Values: {{ p['values'] | join(', ') }}
 {% endif -%}
 {% endif -%}

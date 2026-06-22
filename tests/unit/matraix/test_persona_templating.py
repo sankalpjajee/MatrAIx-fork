@@ -38,7 +38,7 @@ def test_render_v1_instruction_template(personas_0042: Path) -> None:
     path = resolve_persona_template(persona, None, PERSONA_INSTRUCTION_TEMPLATE)
     text = render_persona_template(path, persona, instruction="Buy the plan.")
     assert "0042" in text
-    assert "Product Manager" in text
+    assert "indifferent" in text.lower()
     assert "## Task instruction" in text
     assert "Buy the plan." in text
 
@@ -47,13 +47,29 @@ def test_render_v1_domains_template(personas_0042: Path) -> None:
     persona = load_persona(personas_0042)
     path = resolve_persona_template(persona, None, PERSONA_SYSTEM_TEMPLATE)
     text = render_persona_template(path, persona)
-    assert "## Demographics" in text
-    assert "Product Manager" in text
-    assert "## Psychology" in text
-    assert "openness=0.72" in text
-    assert "## Communication" in text
-    assert "## Preferences" in text
+    assert "## Who you are" in text
+    assert "between 55 and 64" in text
+    assert "indifferent" in text.lower()
+    assert "My life-age band is" not in text
     assert "Stay in character" in text
+
+
+def test_render_psychology_without_values_key(tmp_path: Path) -> None:
+    """Matrix-demo personas omit psychology.values; must not hit dict.values method."""
+    path = tmp_path / "minimal.yaml"
+    path.write_text(
+        "persona_id: '0099'\n"
+        "psychology:\n"
+        "  risk_tolerance: low\n"
+        "  motivation_drivers:\n"
+        "    - curiosity\n"
+    )
+    persona = load_persona(path)
+    template_path = resolve_persona_template(persona, None, PERSONA_SYSTEM_TEMPLATE)
+    text = render_persona_template(template_path, persona)
+    assert "Risk tolerance: low" in text
+    assert "Motivation: curiosity" in text
+    assert "Values:" not in text
 
 
 def test_custom_template_override(tmp_path: Path) -> None:

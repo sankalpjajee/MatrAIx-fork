@@ -4,8 +4,9 @@ This directory (`docs/`) holds **MatrAIx team documentation** (Markdown only).
 
 > **Do not confuse with repo-root assets:**  
 > - `docs/applications/` = **Application team docs** (how to author tasks)  
-> - `/tasks/` (repo root) = **executable simulation tasks**  
-> Likewise: `docs/personas/` is documentation; `/persona/` is YAML data.
+> - `/application/` (repo root) = **application-oriented simulation tasks**  
+> - `/persona/tasks/` = **persona validation tasks** (dimension grounding probes)  
+> Likewise: `docs/personas/` is documentation; `/persona/` is YAML data + validation entry.
 
 ## Overview
 
@@ -16,7 +17,7 @@ This directory (`docs/`) holds **MatrAIx team documentation** (Markdown only).
 | Team | Docs | Team PLAN | Repo assets (root) |
 |------|------|-----------|-------------------|
 | Persona | [personas/](./personas/) | [PLAN.md](./personas/PLAN.md) | `persona/` |
-| Application | [applications/](./applications/) | [PLAN.md](./applications/PLAN.md) | `tasks/{survey,chat,web,computer-use}/` |
+| Application | [applications/](./applications/) | [PLAN.md](./applications/PLAN.md) | `application/tasks/{survey,chat,web,computer-use}/` |
 | Environment | [environments/](./environments/) — incl. [choosing an agent](./environments/choosing-an-agent.md) | [PLAN.md](./environments/PLAN.md) | `configs/jobs/`, `src/matraix/`, `src/harbor/` |
 
 ## Run cheat sheet
@@ -25,12 +26,12 @@ This directory (`docs/`) holds **MatrAIx team documentation** (Markdown only).
 uv run harbor run \
   -a persona-claude-code \
   -m anthropic/claude-sonnet-4-6 \
-  --ak persona_path=persona/examples/persona_0042.yaml \
-  -p tasks/chat/<scenario>
+  --ak persona_path=persona/datasets/bench-dev-100/persona_0042.yaml \
+  -p application/tasks/example-chat-<scenario>
 ```
 
 ```bash
-harbor run -c configs/jobs/persona-debug-local.yaml
+harbor run -c configs/jobs/example-job-recipe/appSim-example-debug-local.yaml
 ```
 
 ## Future

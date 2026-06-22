@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from matraix.agents.persona.loader import Persona, load_persona
+from matraix.persona_job import SMOKE_PERSONA_PATH
 from matraix.agents.persona.templating import (
     PERSONA_INSTRUCTION_TEMPLATE,
     PERSONA_SYSTEM_TEMPLATE,
@@ -15,7 +16,7 @@ from matraix.agents.persona.templating import (
 )
 
 if TYPE_CHECKING:
-    pass
+    from harbor.environments.base import BaseEnvironment
 
 
 class PersonaMixin:
@@ -35,7 +36,7 @@ class PersonaMixin:
         if not persona_path:
             raise ValueError(
                 f"{agent_name} requires persona_path "
-                "(pass --ak persona_path=persona/examples/persona_0042.yaml)"
+                f"(pass --ak persona_path={SMOKE_PERSONA_PATH})"
             )
         self._persona = load_persona(persona_path)
         self._persona_agent_name = agent_name
@@ -72,4 +73,12 @@ class PersonaMixin:
         meta_path.write_text(
             json.dumps(meta, indent=2, ensure_ascii=False) + "\n",
             encoding="utf-8",
+        )
+
+    async def _prepare_persona_trial(self, environment: BaseEnvironment) -> None:
+        """Write trial meta and upload persona YAML for in-container verifiers."""
+        self._write_persona_meta()
+        await environment.upload_file(
+            self._persona.persona_path,
+            "/app/input/persona.yaml",
         )

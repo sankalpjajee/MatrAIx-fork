@@ -41,5 +41,5 @@ class PersonaOpenHandsSDK(PersonaMixin, OpenHandsSDK):
         environment: BaseEnvironment,
         context: AgentContext,
     ) -> None:
-        self._write_persona_meta()
+        await self._prepare_persona_trial(environment)
         await super().run(instruction, environment, context)

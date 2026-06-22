@@ -8,7 +8,7 @@
 |---------|------|
 | Environment **code** (docker/daytona/…) | `src/harbor/environments/` |
 | Job orchestration YAML | `configs/jobs/` |
-| Per-task container | `tasks/*/environment/` |
+| Per-task container | `application/*/environment/`, `persona/tasks/*/environment/` |
 | Persona agents | `src/matraix/` |
 | Trial inspection | `apps/viewer/`, `harbor view` |
 | Agent & model selection | [choosing-an-agent.md](./choosing-an-agent.md) |

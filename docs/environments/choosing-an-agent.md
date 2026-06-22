@@ -8,20 +8,20 @@ Every run specifies the agent, model, persona, and task on the command line.
 |------|---------|---------|
 | `-a` | Persona agent | `persona-claude-code` |
 | `-m` | LLM | `anthropic/claude-sonnet-4-6` |
-| `-p` | Task scenario | `tasks/survey/product-feedback` |
-| `--ak persona_path` | Persona YAML (**which profile**) | `persona/examples/persona_0042.yaml` |
+| `-p` | Task scenario | `application/tasks/example-survey_product-feedback` |
+| `--ak persona_path` | Persona YAML (**which profile**) | `persona/datasets/bench-dev-100/persona_0042.yaml` |
 
 ## Persona agents
 
 | CLI name | Application | Typical use | Example task |
 |----------|-------------|-------------|----------------|
-| `persona-claude-code` | survey<br>chat | Forms, surveys, multi-turn chat, API/MCP sidecars | [product-feedback](../../tasks/survey/product-feedback)<br>[acme-support-api](../../tasks/chat/acme-support-api)<br>[acme-support-mcp](../../tasks/chat/acme-support-mcp) |
-| `persona-gemini-cli` | survey<br>chat | Same as `persona-claude-code`; Google Gemini CLI backend | [product-feedback](../../tasks/survey/product-feedback)<br>[acme-support-api](../../tasks/chat/acme-support-api)<br>[acme-support-mcp](../../tasks/chat/acme-support-mcp) |
-| `persona-codex` | survey<br>chat | Same as `persona-claude-code`; OpenAI Codex CLI backend | [product-feedback](../../tasks/survey/product-feedback)<br>[acme-support-api](../../tasks/chat/acme-support-api)<br>[acme-support-mcp](../../tasks/chat/acme-support-mcp) |
-| `persona-openhands-sdk` | web | Python Playwright in the terminal (DOM selectors); fast, CI-friendly | [books-interest-playwright](../../tasks/web/books-interest-playwright) |
-| `persona-browser-use` | web | browser-use agent loop over Chromium | [books-interest-browser-use](../../tasks/web/books-interest-browser-use) |
-| `persona-cocoa` | web | browser + shell + files in one container | [books-interest-cocoa](../../tasks/web/books-interest-cocoa) |
-| `persona-computer-1` | web<br>computer-use | Screenshot CUA; auto-routes to use.computer (macOS/iOS) or Docker Linux | **computer-use:** [macos-notification-preferences](../../tasks/computer-use/macos-notification-preferences)<br>[ios-notification-preferences](../../tasks/computer-use/ios-notification-preferences)<br>[linux-notification-preferences](../../tasks/computer-use/linux-notification-preferences)<br>**web:** [books-interest-linux-cua](../../tasks/web/books-interest-linux-cua) |
+| `persona-claude-code` | survey<br>chat | Forms, surveys, multi-turn chat, API/MCP sidecars | [product-feedback](../../application/tasks/example-survey_product-feedback)<br>[acme-support-api](../../application/tasks/example-chat-api_support_chatbot)<br>[acme-support-mcp](../../application/tasks/example-chat-mcp_support_chatbot) |
+| `persona-gemini-cli` | survey<br>chat | Same as `persona-claude-code`; Google Gemini CLI backend | [product-feedback](../../application/tasks/example-survey_product-feedback)<br>[acme-support-api](../../application/tasks/example-chat-api_support_chatbot)<br>[acme-support-mcp](../../application/tasks/example-chat-mcp_support_chatbot) |
+| `persona-codex` | survey<br>chat | Same as `persona-claude-code`; OpenAI Codex CLI backend | [product-feedback](../../application/tasks/example-survey_product-feedback)<br>[acme-support-api](../../application/tasks/example-chat-api_support_chatbot)<br>[acme-support-mcp](../../application/tasks/example-chat-mcp_support_chatbot) |
+| `persona-openhands-sdk` | web | Python Playwright in the terminal (DOM selectors); fast, CI-friendly | [books-interest-playwright](../../application/tasks/example-web-playwright_books-interest) |
+| `persona-browser-use` | web | browser-use agent loop over Chromium | [books-interest-browser-use](../../application/tasks/example-web-browser-use_books-interest) |
+| `persona-cocoa` | web | browser + shell + files in one container | [books-interest-cocoa](../../application/tasks/example-web-cocoa_books-interest) |
+| `persona-computer-1` | web<br>computer-use | Screenshot CUA; auto-routes to use.computer (macOS/iOS) or Docker Linux | **computer-use:** [macos-notification-preferences](../../application/tasks/example-computer-use-macos_notification-preferences)<br>[ios-notification-preferences](../../application/tasks/example-computer-use-ios_notification-preferences)<br>[linux-notification-preferences](../../application/tasks/example-computer-use-linux_notification-preferences)<br>**web:** [books-interest-linux-cua](../../application/tasks/example-web-cua_books-interest) |
 
 Live-web details: [web-interaction.md](../applications/web-interaction.md).
 
@@ -75,23 +75,23 @@ Variable names per agent: see [`.env.example`](../../.env.example). Optional: [d
 uv run harbor run \
   -a persona-claude-code \
   -m anthropic/claude-sonnet-4-6 \
-  --ak persona_path=persona/examples/persona_0042.yaml \
-  -p tasks/chat/acme-support-mcp
+  --ak persona_path=persona/datasets/bench-dev-100/persona_0042.yaml \
+  -p application/tasks/example-chat-mcp_support_chatbot
 ```
 
 ```bash
 uv run harbor run \
   -a persona-browser-use \
   -m anthropic/claude-sonnet-4-6 \
-  --ak persona_path=persona/examples/persona_0042.yaml \
-  -p tasks/web/books-interest-browser-use
+  --ak persona_path=persona/datasets/bench-dev-100/persona_0042.yaml \
+  -p application/tasks/example-web-browser-use_books-interest
 ```
 
 Batch runs: [configs/jobs/README.md](../../configs/jobs/README.md).
 
 ## For task authors
 
-Add **Suggested setup (non-binding)** in `tasks/.../README.md`; do not hard-require an agent.
+Add **Suggested setup (non-binding)** in `application/.../README.md` (or `persona/tasks/.../README.md`); do not hard-require an agent.
 
 ## Related
 

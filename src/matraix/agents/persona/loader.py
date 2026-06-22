@@ -9,6 +9,7 @@ from typing import Any
 import yaml
 
 PERSONA_DOMAIN_KEYS = (
+    "dimensions",
     "demographics",
     "psychology",
     "communication",
@@ -18,6 +19,7 @@ PERSONA_DOMAIN_KEYS = (
 
 SCHEMA_V0 = "v0"
 SCHEMA_V1 = "v1"
+SCHEMA_V2 = "v2"
 
 
 @dataclass(frozen=True)
@@ -35,6 +37,10 @@ class Persona:
     display_name: str | None
     summary: str | None
     system_prompt: str | None
+
+    @property
+    def dimensions(self) -> dict[str, Any]:
+        return _as_dict(self.data.get("dimensions"))
 
     @property
     def demographics(self) -> dict[str, Any]:
@@ -59,6 +65,9 @@ class Persona:
     def has_domains(self) -> bool:
         return any(self.data.get(key) for key in PERSONA_DOMAIN_KEYS)
 
+    def has_dimensions_schema(self) -> bool:
+        return bool(self.dimensions)
+
     def template_context(self, *, instruction: str | None = None) -> dict[str, Any]:
         """Full Jinja context: YAML tree plus normalized top-level aliases."""
         context: dict[str, Any] = dict(self.data)
@@ -70,6 +79,7 @@ class Persona:
                 "display_name": self.display_name,
                 "summary": self.summary,
                 "system_prompt": self.system_prompt,
+                "dimensions": self.dimensions,
                 "demographics": self.demographics,
                 "psychology": self.psychology,
                 "communication": self.communication,
@@ -115,11 +125,17 @@ def load_persona(path: str | Path) -> Persona:
     summary = _optional_str(raw.get("summary"))
     system_prompt = _optional_str(raw.get("system_prompt"))
     has_domains = any(raw.get(key) for key in PERSONA_DOMAIN_KEYS)
+    has_dimensions = isinstance(raw.get("dimensions"), dict) and bool(raw["dimensions"])
 
     if not display_name and persona_id:
         display_name = f"persona-{persona_id}"
 
-    schema_version = SCHEMA_V1 if has_domains or persona_id else SCHEMA_V0
+    if has_dimensions:
+        schema_version = SCHEMA_V2
+    elif has_domains or persona_id:
+        schema_version = SCHEMA_V1
+    else:
+        schema_version = SCHEMA_V0
 
     if not system_prompt and not has_domains:
         parts = []
@@ -131,7 +147,7 @@ def load_persona(path: str | Path) -> Persona:
 
     if not system_prompt and not has_domains:
         raise ValueError(
-            f"Persona {resolved} must define domain blocks (v1), or "
+            f"Persona {resolved} must define dimensions (v2), domain blocks (v1), or "
             "system_prompt / display_name+summary (v0)"
         )
 

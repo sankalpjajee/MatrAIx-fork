@@ -4,12 +4,16 @@
 from __future__ import annotations
 
 import argparse
+import base64
+import binascii
 import importlib
 import json
 import os
 import sys
 import time
 from pathlib import Path
+from typing import Any
+from uuid import uuid4
 
 _COCOA_ROOT = os.environ.get("COCOA_ROOT", "/opt/cocoa-agent")
 _PREPARED = False
@@ -116,6 +120,293 @@ def _skip_docker() -> bool:
     return raw in ("1", "true", "yes", "on")
 
 
+def _parse_tool_arguments(raw: Any) -> dict[str, Any]:
+    if isinstance(raw, dict):
+        return raw
+    if isinstance(raw, str):
+        try:
+            parsed = json.loads(raw)
+        except json.JSONDecodeError:
+            return {"raw": raw}
+        return parsed if isinstance(parsed, dict) else {"value": parsed}
+    if raw is None:
+        return {}
+    return {"value": raw}
+
+
+def _action_arguments(action: dict[str, Any]) -> dict[str, Any]:
+    return {
+        key: value
+        for key, value in action.items()
+        if key not in {"action_type", "tool_call_id"}
+    }
+
+
+def _split_assistant_content(content: str) -> tuple[str, str | None]:
+    text = (content or "").strip()
+    if not text:
+        return "[agent step]", None
+    if text.startswith("Thought:"):
+        thought = text.removeprefix("Thought:").strip()
+        return text, thought or None
+    return text, None
+
+
+def _screenshot_map(result: dict[str, Any]) -> dict[str, str]:
+    viz = result.get("visualization_data")
+    if not isinstance(viz, dict):
+        nested = result.get("trajectory")
+        viz = nested.get("visualization_data") if isinstance(nested, dict) else {}
+    if not isinstance(viz, dict):
+        return {}
+
+    mapping: dict[str, str] = {}
+    for iteration in viz.get("iterations") or []:
+        if not isinstance(iteration, dict):
+            continue
+        for action_item in iteration.get("actions") or []:
+            if not isinstance(action_item, dict):
+                continue
+            action = action_item.get("action")
+            if not isinstance(action, dict):
+                continue
+            tool_call_id = action.get("tool_call_id")
+            screenshot = action_item.get("screenshot")
+            if (
+                isinstance(tool_call_id, str)
+                and isinstance(screenshot, str)
+                and screenshot
+            ):
+                mapping[tool_call_id] = screenshot
+    return mapping
+
+
+def _save_screenshot_b64(
+    screenshot_data: str, images_dir: Path, step_number: int
+) -> str | None:
+    try:
+        image_bytes = base64.b64decode(screenshot_data, validate=True)
+    except (binascii.Error, ValueError):
+        return None
+    if not image_bytes:
+        return None
+
+    images_dir.mkdir(parents=True, exist_ok=True)
+    dest = images_dir / f"step_{step_number:03d}.png"
+    dest.write_bytes(image_bytes)
+    return f"images/{dest.name}"
+
+
+def _cocoa_conversation(result: dict[str, Any]) -> list[dict[str, Any]]:
+    conversation = result.get("conversation")
+    if isinstance(conversation, list):
+        return [msg for msg in conversation if isinstance(msg, dict)]
+    nested = result.get("trajectory")
+    if isinstance(nested, dict) and isinstance(nested.get("conversation"), list):
+        return [msg for msg in nested["conversation"] if isinstance(msg, dict)]
+    return []
+
+
+def _cocoa_execution_trace(result: dict[str, Any]) -> list[dict[str, Any]]:
+    execution_trace = result.get("execution_trace")
+    if isinstance(execution_trace, list):
+        return [entry for entry in execution_trace if isinstance(entry, dict)]
+    nested = result.get("trajectory")
+    if isinstance(nested, dict) and isinstance(nested.get("execution_trace"), list):
+        return [entry for entry in nested["execution_trace"] if isinstance(entry, dict)]
+    return []
+
+
+def _cocoa_summary(result: dict[str, Any]) -> dict[str, Any]:
+    execution_trace = _cocoa_execution_trace(result)
+    action_names: list[str] = []
+    urls: list[str] = []
+    for entry in execution_trace:
+        action = entry.get("action")
+        if not isinstance(action, dict):
+            continue
+        action_type = action.get("action_type")
+        if isinstance(action_type, str):
+            action_names.append(action_type)
+        url = action.get("url")
+        if isinstance(url, str) and url:
+            urls.append(url)
+
+    status = result.get("status")
+    final_result = result.get("answer") or result.get("task_result")
+    if not final_result and action_names and action_names[-1] == "task_complete":
+        final_result = "Task completed"
+
+    return {
+        "final_result": final_result,
+        "is_done": status in {"success", "failed", "error"},
+        "is_successful": status == "success",
+        "urls": urls,
+        "action_names": action_names,
+        "promoted_outputs": [],
+        "status": status,
+        "iterations": result.get("iterations"),
+    }
+
+
+def cocoa_to_atif(
+    result: dict[str, Any],
+    *,
+    instruction: str,
+    model_name: str,
+    trajectory_path: Path,
+    agent_version: str = "unknown",
+    session_id: str | None = None,
+) -> dict[str, Any]:
+    """Convert a CocoaAgent result dict to ATIF-v1.6 for the MatrAIx viewer."""
+    conversation = _cocoa_conversation(result)
+    execution_trace = _cocoa_execution_trace(result)
+    screenshots = _screenshot_map(result)
+    images_dir = trajectory_path.parent / "images"
+
+    steps: list[dict[str, Any]] = [
+        {
+            "step_id": 1,
+            "timestamp": None,
+            "source": "user",
+            "message": instruction,
+        }
+    ]
+    step_id = 2
+    trace_idx = 0
+    agent_step_number = 0
+
+    for message in conversation:
+        if message.get("role") != "assistant":
+            continue
+
+        agent_step_number += 1
+        message_text, reasoning = _split_assistant_content(
+            message.get("content") if isinstance(message.get("content"), str) else ""
+        )
+        tool_calls_raw = message.get("tool_calls") or []
+
+        tool_calls: list[dict[str, Any]] = []
+        observation_results: list[dict[str, Any]] = []
+        screenshot_rel: str | None = None
+
+        for tc_idx, tool_call in enumerate(tool_calls_raw):
+            if not isinstance(tool_call, dict):
+                continue
+
+            func = tool_call.get("function")
+            if not isinstance(func, dict):
+                func = {}
+
+            trace_entry = (
+                execution_trace[trace_idx]
+                if trace_idx < len(execution_trace)
+                else {}
+            )
+            trace_action = trace_entry.get("action")
+            trace_action = trace_action if isinstance(trace_action, dict) else {}
+
+            name = (
+                trace_action.get("action_type")
+                or func.get("name")
+                or "unknown"
+            )
+            arguments = _action_arguments(trace_action)
+            if not arguments:
+                arguments = _parse_tool_arguments(func.get("arguments"))
+
+            call_id = (
+                tool_call.get("id")
+                or trace_action.get("tool_call_id")
+                or f"step{agent_step_number}_action{tc_idx + 1}"
+            )
+            tool_calls.append(
+                {
+                    "tool_call_id": call_id,
+                    "function_name": name,
+                    "arguments": arguments,
+                }
+            )
+
+            feedback = trace_entry.get("feedback")
+            feedback = feedback if isinstance(feedback, dict) else {}
+            observation = feedback.get("message")
+            if not isinstance(observation, str) or not observation.strip():
+                observation = (
+                    "Task completed"
+                    if feedback.get("done")
+                    else f"Action '{name}' executed"
+                )
+            observation_results.append(
+                {
+                    "source_call_id": call_id,
+                    "content": observation,
+                }
+            )
+
+            if screenshot_rel is None and isinstance(call_id, str):
+                screenshot_data = screenshots.get(call_id)
+                if screenshot_data:
+                    screenshot_rel = _save_screenshot_b64(
+                        screenshot_data, images_dir, agent_step_number
+                    )
+
+            trace_idx += 1
+
+        if screenshot_rel:
+            message_content: str | list[dict[str, Any]] = [
+                {"type": "text", "text": message_text},
+                {
+                    "type": "image",
+                    "source": {
+                        "media_type": "image/png",
+                        "path": screenshot_rel,
+                    },
+                },
+            ]
+        else:
+            message_content = message_text
+
+        agent_step: dict[str, Any] = {
+            "step_id": step_id,
+            "timestamp": None,
+            "source": "agent",
+            "model_name": model_name,
+            "message": message_content,
+        }
+        if reasoning:
+            agent_step["reasoning_content"] = reasoning
+        if tool_calls:
+            agent_step["tool_calls"] = tool_calls
+        if observation_results:
+            agent_step["observation"] = {"results": observation_results}
+        steps.append(agent_step)
+        step_id += 1
+
+    cost = result.get("api_cost_stats")
+    cost = cost if isinstance(cost, dict) else {}
+    final_metrics = {
+        "total_prompt_tokens": cost.get("total_input_tokens"),
+        "total_completion_tokens": cost.get("total_output_tokens"),
+        "total_cached_tokens": cost.get("total_cached_tokens"),
+        "total_cost_usd": cost.get("total_cost_usd"),
+        "total_steps": len(steps),
+    }
+
+    return {
+        "schema_version": "ATIF-v1.6",
+        "session_id": session_id or str(uuid4()),
+        "agent": {
+            "name": "cocoa",
+            "version": agent_version,
+            "model_name": model_name,
+        },
+        "steps": steps,
+        "final_metrics": final_metrics,
+        "extra": {"cocoa": _cocoa_summary(result)},
+    }
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--instruction", required=True)
@@ -170,7 +461,17 @@ def main() -> int:
 
     trajectory_path = Path(args.trajectory_path)
     trajectory_path.parent.mkdir(parents=True, exist_ok=True)
-    trajectory_path.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
+    agent_version = os.environ.get("COCOA_VERSION", "unknown")
+    trajectory = cocoa_to_atif(
+        result,
+        instruction=args.instruction,
+        model_name=args.model,
+        trajectory_path=trajectory_path,
+        agent_version=agent_version,
+    )
+    trajectory_path.write_text(
+        json.dumps(trajectory, indent=2) + "\n", encoding="utf-8"
+    )
 
     if result.get("status") == "error":
         return 1

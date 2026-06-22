@@ -1,46 +1,49 @@
 # MatrAIx job configs
 
-Harbor Job YAML templates for `harbor run -c configs/jobs/<file>.yaml`.
+Harbor Job YAML under `configs/jobs/`. Run with `harbor run -c configs/jobs/<subdir>/<file>.yaml`.
 
-## How this differs from code paths
+## Layout
 
-| Path | Contents |
-|------|----------|
-| **`configs/jobs/`** (this directory) | Orchestration: agents, personas, tasks, concurrency, docker/daytona |
-| `src/harbor/environments/` | Python environment provider implementations |
-| `tasks/*/environment/` | Per-task container definitions |
+| Directory | Purpose |
+|-----------|---------|
+| [`example-job-recipe/`](example-job-recipe/) | Hand-written **smoke / demo** jobs (usually 1 persona, `persona_0042`) |
+| [`persona-task-grounding-job-recipe/`](persona-task-grounding-job-recipe/) | **Generated** persona bench grounding jobs (`persona/scripts/generate_persona_job.py`) |
+| [`application-task-job-recipe/`](application-task-job-recipe/) | **Generated** application multi-persona jobs (`application/scripts/generate_application_job.py`) |
 
-## Files
+## Example smoke jobs
 
 | File | Purpose |
 |------|---------|
-| `persona-debug-local.yaml` | Quick local run: survey + chat with `persona-claude-code` |
-| `persona-survey-local.yaml` | Survey task smoke |
-| `persona-chat-local.yaml` | Chat task smoke |
-| `persona-web-playwright-local.yaml` | Live web via `persona-openhands-sdk` (Playwright) |
-| `persona-web-browser-use-local.yaml` | Live web via `persona-browser-use` |
-| `persona-web-cocoa-local.yaml` | Live web via `persona-cocoa` (AIO Sandbox image) |
-| `persona-web-linux-cua-local.yaml` | Docker Linux **web** CUA (books.toscrape.com); uses `cua_submission_profile: book_interest` |
-| `persona-computer-use-linux-local.yaml` | Linux desktop notifications (Docker Xvfb) via `persona-computer-1` |
-| `persona-computer-use-macos-local.yaml` | macOS desktop via `persona-computer-1` + `use-computer` |
-| `persona-computer-use-ios-local.yaml` | iOS Simulator via `persona-computer-1` + `use-computer` (`platform: ios`) |
+| `example-job-recipe/appSim-example-debug-local.yaml` | Quick local run: survey + chat |
+| `example-job-recipe/harbor-smoke-local.yaml` | Harbor hello-world smoke (no API key) |
+| `example-job-recipe/appSim-example-survey-local.yaml` | Survey task smoke |
+| `example-job-recipe/appSim-example-chat-local.yaml` | Chat task smoke |
+| `example-job-recipe/appSim-example-web-playwright-local.yaml` | Web via `persona-openhands-sdk` |
+| `example-job-recipe/appSim-example-web-browser-use-local.yaml` | Web via `persona-browser-use` |
+| `example-job-recipe/appSim-example-web-cocoa-local.yaml` | Web via `persona-cocoa` |
+| `example-job-recipe/appSim-example-web-linux-cua-local.yaml` | Docker Linux web CUA |
+| `example-job-recipe/appSim-example-computer-use-linux-local.yaml` | Linux desktop notifications |
+| `example-job-recipe/appSim-example-computer-use-macos-local.yaml` | macOS desktop |
+| `example-job-recipe/appSim-example-computer-use-ios-local.yaml` | iOS Simulator |
 
-Planned (Phase 3): `persona-sweep-daytona.yaml`
+## Persona grounding recipes
+
+See [`persona-task-grounding-job-recipe/`](persona-task-grounding-job-recipe/) and [`persona/README.md`](../../persona/README.md).
 
 ## Environment variables
 
 - `ANTHROPIC_API_KEY` — Claude-family persona agents
 - `LLM_API_KEY` — `persona-openhands-sdk` (Playwright web)
 - `USE_COMPUTER_API_KEY` — `persona-computer-1` with `-e use-computer` (macOS / iOS)
-- Docker Linux CUA (`persona-web-linux-cua-local.yaml`) needs only `ANTHROPIC_API_KEY` + `uv sync --extra computer-1`
+- Docker Linux CUA needs `ANTHROPIC_API_KEY` + `uv sync --extra computer-1`
 - `DAYTONA_API_KEY` — when `environment.type: daytona`
 
-Set these in your shell (see [`.env.example`](../../.env.example) and [choosing-an-agent.md](../../docs/environments/choosing-an-agent.md)).
+See [`.env.example`](../../.env.example) and [choosing-an-agent.md](../../docs/environments/choosing-an-agent.md).
 
 ## Run
 
 ```bash
-uv run harbor run -c configs/jobs/persona-debug-local.yaml
+uv run harbor run -c configs/jobs/example-job-recipe/appSim-example-debug-local.yaml
 ```
 
-Computer-use: `persona-computer-1` auto-routes by environment — see [tasks/computer-use/README.md](../../tasks/computer-use/README.md) and job YAMLs `persona-computer-use-macos-local`, `persona-computer-use-ios-local`, `persona-computer-use-linux-local`. Web CUA: `persona-web-linux-cua-local`.
+Computer-use: `persona-computer-1` auto-routes — see `example-job-recipe/appSim-example-computer-use-*` and `example-job-recipe/appSim-example-web-linux-cua-local.yaml`.
