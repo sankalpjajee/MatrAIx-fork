@@ -7,8 +7,8 @@ Harbor Job YAML under `configs/jobs/`. Run with `harbor run -c configs/jobs/<sub
 | Directory | Purpose |
 |-----------|---------|
 | [`example-job-recipe/`](example-job-recipe/) | Hand-written **smoke / demo** jobs (checked in; `appSim-*`, `harbor-smoke-local`) |
-| [`persona-task-grounding-job-recipe/`](persona-task-grounding-job-recipe/) | **Generated** persona bench jobs (`persona/scripts/generate_persona_job.py`) — **gitignored** |
-| [`application-task-job-recipe/`](application-task-job-recipe/) | **Generated** application multi-persona jobs — **gitignored**; see [getting-started.md](../../docs/applications/getting-started.md#7-batch--sample-many-personas-job) |
+| [`persona-task-grounding-job-recipe/`](persona-task-grounding-job-recipe/) | Persona bench jobs (`generate_persona_job.py`); **checked-in example** + other outputs gitignored |
+| [`application-task-job-recipe/`](application-task-job-recipe/) | Application multi-persona jobs (`generate_application_job.py`); **checked-in example** + other outputs gitignored — [getting-started §7](../../docs/applications/getting-started.md#7-batch--sample-many-personas-job) |
 
 ## Example smoke jobs
 
@@ -26,9 +26,18 @@ Harbor Job YAML under `configs/jobs/`. Run with `harbor run -c configs/jobs/<sub
 | `example-job-recipe/appSim-example-computer-use-macos-local.yaml` | macOS desktop |
 | `example-job-recipe/appSim-example-computer-use-ios-local.yaml` | iOS Simulator |
 
+## Checked-in batch examples
+
+| File | Purpose |
+|------|---------|
+| `application-task-job-recipe/example-survey-product-feedback-random-n1.yaml` | Application batch smoke (1 persona, random sample) |
+| `persona-task-grounding-job-recipe/personaBench-example-survey-product-feedback-economic-motivation-pg2.yaml` | Persona grounding batch (4 probe values × 2 personas) |
+
+Other files under those directories are **gitignored** (local `generate_*_job.py` output).
+
 ## Persona grounding recipes
 
-Generated locally via `persona/scripts/generate_persona_job.py` → `configs/jobs/persona-task-grounding-job-recipe/` (gitignored). See [`persona/README.md`](../../persona/README.md).
+Regenerate locally via `persona/scripts/generate_persona_job.py` → `configs/jobs/persona-task-grounding-job-recipe/`. See [`persona/README.md`](../../persona/README.md).
 
 ## Environment variables
 

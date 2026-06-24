@@ -140,7 +140,7 @@ Ask for each question: *If I swap only the probe value, does the expected answer
 
 ## 3. Generate a grounding job
 
-The job generator reads catalog confounders, **filters** the persona pool, **stratifies** on the probe dimension, and writes YAML under `configs/jobs/persona-task-grounding-job-recipe/` (gitignored — regenerate locally).
+The job generator reads catalog confounders, **filters** the persona pool, **stratifies** on the probe dimension, and writes YAML under `configs/jobs/persona-task-grounding-job-recipe/` (other generated files gitignored — see checked-in `personaBench-*-pg2` example).
 
 ```bash
 uv run python persona/scripts/generate_persona_job.py \

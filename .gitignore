@@ -242,6 +242,10 @@ persona/datasets/_generated/
 persona/datasets/jun20-1k/
 persona/sources/Jun20_1k_persona_description/
 
-# Generated / local job recipes (scripts write here; not checked in)
+# Generated / local job recipes (scripts write here; other files not checked in)
 configs/jobs/application-task-job-recipe/*
+!configs/jobs/application-task-job-recipe/example-survey-product-feedback-random-n1.yaml
+!configs/jobs/application-task-job-recipe/example-survey-product-feedback-random-n1.meta.json
 configs/jobs/persona-task-grounding-job-recipe/*
+!configs/jobs/persona-task-grounding-job-recipe/personaBench-example-survey-product-feedback-economic-motivation-pg2.yaml
+!configs/jobs/persona-task-grounding-job-recipe/personaBench-example-survey-product-feedback-economic-motivation-pg2.meta.json
