@@ -1,5 +1,7 @@
 # Persona team — getting started
 
+> **Status: remains finalization** — this guide is a working draft; steps and tooling may change. Prefer [Application getting started](../applications/getting-started.md) for stable smoke runs until this doc is finalized.
+
 A step-by-step path from zero to your first **persona grounding** job. No prior Harbor experience required.
 
 **What you are doing (vs Application):** Application tasks simulate *what users would do* in a product scenario. **Persona bench** asks: *given a full persona profile (~1,300 dimensions), does the agent's behavior in this task actually reflect the **probe dimension** we care about?* You build a **controlled cohort** (probe varies, confounders restricted, everything else controlled), run them through a **discriminative task**, and score **grounding**.

@@ -66,7 +66,7 @@ uv run harbor view jobs --build
 
 > Use **`uv run harbor`** — a globally installed `harbor` may be an older build without `persona-*` agents.
 
-Step-by-step guides: [Application getting started](docs/applications/getting-started.md) · [Persona getting started](docs/personas/getting-started.md)
+Step-by-step guide: [Application getting started](docs/applications/getting-started.md)
 
 ---
 
@@ -88,7 +88,7 @@ The form collects basic background (affiliation, interests, experience) so organ
 
 | Team | If you care about… | Start here |
 |------|-------------------|------------|
-| 🧬 **Persona** | Persona schema and data, persona generator, persona grounding | [docs/personas/](docs/personas/README.md)<br>[getting started](docs/personas/getting-started.md) |
+| 🧬 **Persona** | Persona schema and data, persona generator, persona grounding | [docs/personas/](docs/personas/README.md) |
 | 📋 **Application** | Product scenarios, task design, product user metrics design | [docs/applications/](docs/applications/README.md)<br>[getting started](docs/applications/getting-started.md) |
 | 🌐 **Environment** | Environment infra, engineering, runtime, back and front end | [docs/environments/](docs/environments/README.md) |
 
@@ -96,7 +96,7 @@ All teams that run simulations should skim [choosing-an-agent.md](docs/environme
 
 ### 3. Do one hands-on pass
 
-Complete your team’s getting-started guide (or the smoke run above), then browse results with `harbor view`.
+Complete the [Application getting-started guide](docs/applications/getting-started.md) (or the smoke run above), then browse results with `harbor view`.
 
 ### 4. Contribute
 
