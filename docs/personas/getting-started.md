@@ -1,6 +1,6 @@
-# Persona team — getting started
+# Persona team — getting started (⚠️ remain evaluation and finalization)
 
-> **Status: remains finalization** — this guide is a working draft; steps and tooling may change. Prefer [Application getting started](../applications/getting-started.md) for stable smoke runs until this doc is finalized.
+> This guide is a working draft; steps and tooling may change. Prefer [Application getting started](../applications/getting-started.md) for stable smoke runs until evaluation and finalization are complete.
 
 A step-by-step path from zero to your first **persona grounding** job. No prior Harbor experience required.
 

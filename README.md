@@ -50,14 +50,6 @@ export ANTHROPIC_API_KEY="sk-ant-..."   # if not already in your shell
 uv run harbor run -c configs/jobs/example-job-recipe/appSim-example-survey-local.yaml
 ```
 
-**Example (Persona)** — same persona, **bench** survey (MCQ grounding check on `economic_motivation`):
-
-```bash
-export ANTHROPIC_API_KEY="sk-ant-..."   # if not already in your shell
-
-uv run harbor run -c configs/jobs/example-job-recipe/personaBench-example-survey-local.yaml
-```
-
 **View** — inspect runs (`jobs/` includes examples you can browse without re-running):
 
 ```bash
