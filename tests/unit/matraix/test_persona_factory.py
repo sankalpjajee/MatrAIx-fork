@@ -83,7 +83,7 @@ def test_persona_claude_code_injects_append_system_prompt(
         append_system_prompt="Extra rules.",
     )
     assert "0042" in agent._resolved_flags["append_system_prompt"]
-    assert "Parent of young kids" in agent._resolved_flags["append_system_prompt"]
+    assert "between 55 and 64" in agent._resolved_flags["append_system_prompt"]
     assert "Extra rules." in agent._resolved_flags["append_system_prompt"]
 
 
@@ -124,7 +124,7 @@ def test_persona_browser_use_injects_persona_system(
     )
     system = agent._render_persona_system()
     assert "0042" in system
-    assert "Parent of young kids" in system
+    assert "between 55 and 64" in system
 
 
 def test_persona_openhands_sdk_prepends_instruction(
@@ -136,7 +136,7 @@ def test_persona_openhands_sdk_prepends_instruction(
     )
     rendered = agent.render_instruction("Do the task.")
     assert "0042" in rendered
-    assert "Parent of young kids" in rendered
+    assert "between 55 and 64" in rendered
     assert "## Task instruction" in rendered
     assert "Do the task." in rendered
 
@@ -150,7 +150,7 @@ def test_persona_cocoa_prepends_instruction(
     )
     rendered = agent.render_instruction("Do the task.")
     assert "0042" in rendered
-    assert "Parent of young kids" in rendered
+    assert "between 55 and 64" in rendered
     assert "## Task instruction" in rendered
     assert "Do the task." in rendered
 
@@ -165,6 +165,6 @@ def test_persona_cli_agents_prepends_instruction(
     )
     rendered = agent.render_instruction("Do the task.")
     assert "0042" in rendered
-    assert "Parent of young kids" in rendered
+    assert "between 55 and 64" in rendered
     assert "## Task instruction" in rendered
     assert "Do the task." in rendered

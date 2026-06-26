@@ -82,4 +82,4 @@ Known limitations:
 - evaluation metrics (`packages/rewardkit/`)
 - analysis templates (`application/reporting/`, `persona/reporting/`)
 
-See [contributing.md](../contributing.md).
+See [CONTRIBUTING.md](../../CONTRIBUTING.md).

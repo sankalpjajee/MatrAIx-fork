@@ -2,7 +2,9 @@
 
 | Path | Purpose |
 |------|---------|
-| `dimensions.json` | Dimension catalog (synced from MatrAIx; 1-based `index` = `bench_dim_index`) |
+| `dimensions.json` | Dimension catalog (`index` = `bench_dim_index` for persona bench tasks) |
+| `attribute_pool/` | Candidate attribute pool + normalization outputs |
+| `validators/` | Schema checks for `dimensions.json` |
 | `datasets/bench-dev-2000/` | Primary dev persona pool (2000 synthetic profiles) |
 | `tasks/` | Validation Harbor tasks |
 | `scripts/generate_dev_personas.py` | Generate dev YAML from `dimensions.json` |
@@ -23,7 +25,7 @@ uv run python persona/scripts/generate_dev_personas.py \
 
 ## Dev grounding
 
-Default dataset: `bench-dev-2000`. Jobs read task-catalog confounders when present (filter pool → stratify on probe only). Use `--controlled-probe` for anchor-based cohorts.
+Default dataset: `bench-dev-2000`. Jobs read `grounding.toml` on each bench task (filter confounders → stratify on probe). Use `--controlled-probe` for anchor-based cohorts.
 
 ```bash
 uv run python persona/scripts/generate_persona_job.py \

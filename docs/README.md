@@ -10,7 +10,7 @@ This directory (`docs/`) holds **MatrAIx team documentation** (Markdown only).
 
 ## Overview
 
-- [Contributing](./contributing.md)
+- [Contributing](../CONTRIBUTING.md)
 
 ## Three teams
 

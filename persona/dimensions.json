@@ -20435,11 +20435,6 @@
     }
   ],
   "indexConvention": "1-based index on each dimension object matches array order and persona bench task bench_dim_index / Harbor name persona-bench-dim-{NNN}.",
-  "upstreamSource": {
-    "repo": "MatrAIx-ai/MatrAIx",
-    "path": "personas/dimensions+new.json",
-    "branch": "main"
-  },
   "personaYamlProbeFields": {
     "dimensions.age_bracket": {
       "dimensionId": "age_bracket",

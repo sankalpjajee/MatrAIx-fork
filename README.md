@@ -78,7 +78,11 @@ We welcome collaborators across research, product, data, and engineering.
 
 [![Discord](https://img.shields.io/badge/Discord-join%20MatrAIx-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/vruP88PTZ)
 
+When you join Discord, set your **server nickname** to **`Full Name - Affiliation`** (e.g. `Alex Chen - Stanford`). Members who do not use this format may be removed.
+
 [![Google Form](https://img.shields.io/badge/Google%20Form-join%20MatrAIx-4285F4?style=for-the-badge&logo=googleforms&logoColor=white)](https://forms.gle/hwEHng5HGWRqcJue9)
+
+The form collects basic background (affiliation, interests, experience) so organizers can reach you, place you in the right team discussions, and gather information for future paper authorship and acknowledgements.
 
 ### 2. Read docs and pick a team (or teams)
 
@@ -96,7 +100,7 @@ Complete your team’s getting-started guide (or the smoke run above), then brow
 
 ### 4. Contribute
 
-Discuss on **Discord** or open a **GitHub issue** before a large PR — [contributing guide](docs/contributing.md).
+See **[CONTRIBUTING.md](CONTRIBUTING.md)** for workflow (Issues, Discussions, PRs), contribution areas, and how work is recognized. In short: open a **GitHub Issue** for task work (tag your team), log progress in **Discussions**, and link every PR to its Issue.
 
 ---
 
@@ -160,13 +164,6 @@ MatrAIx is intended to produce two initial papers, with more to follow as the pr
 - **Paper 2 — User simulation.** Downstream applications of persona-conditioned agents as simulated users, with task scenarios, evaluation, and analysis of how well simulated feedback stands in for real users.
 
 **Timeline.** Both papers target completion over the summer of 2026.
-
----
-
-## 🤝 Contributing
-
-- [Contributing guide](docs/contributing.md)
-- [Persona team](docs/personas/README.md) · [Environment](docs/environments/README.md) · [Application](docs/applications/README.md)
 
 ---
 
