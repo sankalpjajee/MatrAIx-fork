@@ -8,15 +8,17 @@ stringification; and tolerance of empty / malformed input.
 
 from __future__ import annotations
 
-from backend.service.trace_view import TraceView
-
-# Reuse the fake result types so we can build a real RecBotTurnResult object.
+from backend.service.trace_view import TraceView, item_list_from_exposure
 from backend.tests.conftest import (
     ChatMessage,
     NativeAction,
     RecBotTrace,
     RecBotTurnResult,
 )
+
+
+def _items(view):
+    return item_list_from_exposure(view.get("personaExposure"))
 
 
 def _make_result() -> RecBotTurnResult:
@@ -63,9 +65,9 @@ def test_structured_plan_is_parsed(catalog):
     assert view["plan"][0]["status"] == "ok"
 
 
-def test_recommended_items_resolved_against_catalog(catalog):
+def test_structured_items_resolved_against_catalog(catalog):
     view = TraceView.from_result(_make_result(), catalog)
-    items = view["recommendedItems"]
+    items = _items(view)
     assert len(items) == 2
 
     first = items[0]
@@ -130,12 +132,12 @@ def test_scores_are_extracted(catalog):
         },
         catalog,
     )
-    by_id = {it["itemId"]: it for it in view["recommendedItems"]}
+    by_id = {it["itemId"]: it for it in _items(view)}
     assert by_id["cmu:1"]["score"] == 0.92
     assert by_id["cmu:2"]["score"] == 0.5
 
 
-def test_recommended_items_title_falls_back_to_trace(catalog):
+def test_structured_items_title_falls_back_to_trace(catalog):
     # The id ("6574") is a recai_resources-style integer id that the
     # external-keyed CatalogIndex cannot resolve, so the catalog lookup yields
     # nothing; the trace's own recommended_items title must be used instead.
@@ -148,7 +150,7 @@ def test_recommended_items_title_falls_back_to_trace(catalog):
         },
         catalog,
     )
-    item = view["recommendedItems"][0]
+    item = _items(view)[0]
     assert item["itemId"] == "6574"
     assert item["title"] == "Portal 2"
 
@@ -173,7 +175,7 @@ def test_trace_title_wins_over_mismatched_catalog(catalog):
         },
         catalog,
     )
-    item = view["recommendedItems"][0]
+    item = _items(view)[0]
     assert item["title"] == "Phloretin CF Serum"  # authoritative trace title wins
     assert item["meta"] is None  # mismatched catalog meta (movie genres) dropped
 
@@ -190,7 +192,7 @@ def test_catalog_meta_used_when_it_agrees_with_trace(catalog):
         },
         catalog,
     )
-    item = view["recommendedItems"][0]
+    item = _items(view)[0]
     assert item["title"] == "Blade Runner"
     assert item["meta"] == "1982 · Sci-Fi, Film-noir, Thriller"
 
@@ -205,7 +207,7 @@ def test_scores_from_list_of_dicts(catalog):
         },
         catalog,
     )
-    assert view["recommendedItems"][0]["score"] == 7.0
+    assert _items(view)[0]["score"] == 7.0
 
 
 def test_empty_dict_is_tolerated(catalog):
@@ -213,7 +215,7 @@ def test_empty_dict_is_tolerated(catalog):
     assert view["turnId"] is None
     assert view["userMessage"] is None
     assert view["plan"] == []
-    assert view["recommendedItems"] == []
+    assert view["personaExposure"] == []
     assert view["nativeRaw"] == ""
     assert view["durationSeconds"] is None
 
@@ -229,7 +231,7 @@ def test_resolution_without_catalog_is_safe():
     view = TraceView.build(
         {"trace": {"recommended_item_ids": ["cmu:1"]}}, catalog=None
     )
-    item = view["recommendedItems"][0]
+    item = _items(view)[0]
     assert item["itemId"] == "cmu:1"
     assert item["title"] is None
     assert item["meta"] is None
