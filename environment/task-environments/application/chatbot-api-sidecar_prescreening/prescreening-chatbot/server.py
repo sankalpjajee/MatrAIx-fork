@@ -43,13 +43,23 @@ UNKNOWN_RE = re.compile(
 )
 NO_RE = re.compile(
     r"^\s*(no|nope|nah|none)\b|\b(never|don'?t have|do not have|haven'?t|"
-    r"has not|hasn'?t|not applicable|doesn'?t apply|not pregnant|"
-    r"nothing like that|not that i know|no,)\b",
+    r"has not|hasn'?t|not applicable|doesn'?t apply|does not apply|not pregnant|"
+    r"nothing like that|not that i know|no,|probably not|guess not|not really|"
+    r"not the case|i'?d say no|i would say no|(?:that'?s |it'?s )?not me)\b",
     re.IGNORECASE,
 )
 YES_RE = re.compile(
     r"^\s*(yes|yeah|yep|yup|correct|definitely|absolutely|sure)\b|"
-    r"\b(i do\b(?!n'?t| not)|that'?s right|yes,)\b",
+    r"\b(i do\b(?!n'?t| not)|that'?s right|yes,|i think so|i believe so|"
+    r"probably|i'?d say yes|i would say yes)|(?:that'?s |it'?s )me\b",
+    re.IGNORECASE,
+)
+
+# A leading affirmation word ("definitely", "sure") followed by a negation
+# ("definitely not me") is a NO, not a YES.
+_AFFIRM_THEN_NEG_RE = re.compile(
+    r"^\s*(yes|yeah|yep|yup|correct|definitely|absolutely|sure|probably)\b"
+    r"[^.!?]*\bnot\b",
     re.IGNORECASE,
 )
 
@@ -233,6 +243,8 @@ MIXED_RE = re.compile(
 def _parse_yes_no_unknown(text: str) -> str | None:
     if UNKNOWN_RE.search(text):
         return "unknown"
+    if _AFFIRM_THEN_NEG_RE.search(text):
+        return "no"  # "definitely not me" is a negation, not an affirmation
     negative = bool(NO_RE.search(text))
     positive = bool(YES_RE.search(text))
     if (negative and positive) or (positive and MIXED_RE.search(text)):
