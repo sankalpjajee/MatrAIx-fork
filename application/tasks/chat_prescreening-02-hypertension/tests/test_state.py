@@ -56,7 +56,10 @@ def _verifier_dir() -> Path:
 
 def _load_json(path: Path) -> dict[str, Any]:
     assert path.is_file(), f"Missing {path}"
-    value = json.loads(path.read_text(encoding="utf-8"))
+    try:
+        value = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:  # clean failure, not a raw traceback
+        raise AssertionError(f"{path.name} is not valid JSON: {exc}") from exc
     assert isinstance(value, dict), f"{path.name} root must be an object"
     return value
 
@@ -88,22 +91,36 @@ def _ground_truth(transcript: dict[str, Any]) -> dict[str, Any] | None:
     case out-of-band). The stock chat harness injects none of them yet, so
     label checking stays inert there until case-bound personas land."""
     gt_path = TESTS_DIR / "ground_truth.json"
-    case_id = (
+    if not gt_path.is_file():
+        return None
+    cases = json.loads(gt_path.read_text(encoding="utf-8"))["cases"]
+    # Trust order matters: the MATRIX_TRIAL_CASE_ID env var is the harness's
+    # out-of-band grading key and outranks anything in transcript.json, which is
+    # the artifact under test (a hostile transcript must not pick its own case).
+    env_case = os.environ.get("MATRIX_TRIAL_CASE_ID", "").strip()
+    if env_case:
+        case = cases.get(env_case)
+        assert case is not None, (
+            f"MATRIX_TRIAL_CASE_ID={env_case!r} is not a case in ground_truth.json"
+        )
+        return case
+    transcript_case = (
         transcript.get("caseId")
         or transcript.get("personaId")
         or transcript.get("persona_id")
-        or os.environ.get("MATRIX_TRIAL_CASE_ID", "").strip()
     )
-    if not gt_path.is_file() or not case_id:
+    if not transcript_case:
         return None
-    return json.loads(gt_path.read_text(encoding="utf-8"))["cases"].get(str(case_id))
+    return cases.get(str(transcript_case))
 
 
 def _optional_score(feedback: dict[str, Any], key: str) -> int | None:
     value = feedback.get(key)
     if value is None:
         return None
-    assert isinstance(value, int) and 1 <= value <= 10, f"{key} must be an integer 1-10"
+    assert isinstance(value, int) and not isinstance(value, bool) and 1 <= value <= 10, (
+        f"{key} must be an integer 1-10"
+    )
     return value
 
 
@@ -121,6 +138,12 @@ def _enum_text(feedback: dict[str, Any], key: str) -> str | None:
 
 
 def test_transcript_schema() -> None:
+    # Never let a prior run's verdict survive this one: a failing verifier must
+    # not leave a stale 'resolved' structured_output.json behind.
+    stale = _verifier_dir() / "structured_output.json"
+    if stale.exists():
+        stale.unlink()
+
     protocol = _load_json(TESTS_DIR / "protocol.json")
     transcript = _load_json(TRANSCRIPT_PATH)
     _require_string(transcript.get("sessionId"), "transcript.sessionId")
