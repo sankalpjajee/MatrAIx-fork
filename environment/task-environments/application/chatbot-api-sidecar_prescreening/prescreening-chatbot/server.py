@@ -364,7 +364,9 @@ def health():
 
 @app.post("/v1/messages")
 def post_message():
-    payload = request.get_json(silent=True) or {}
+    payload = request.get_json(silent=True)
+    if not isinstance(payload, dict):
+        payload = {}
     message = str(payload.get("message", "")).strip()
     if not message:
         return jsonify({"error": "message must not be empty"}), 400
