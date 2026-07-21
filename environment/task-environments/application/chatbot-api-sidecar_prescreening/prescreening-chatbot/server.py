@@ -38,15 +38,87 @@ UNKNOWN_RE = re.compile(
     re.IGNORECASE,
 )
 NO_RE = re.compile(
-    r"^\s*(no|nope|nah|never|none)\b|\b(don'?t have|do not have|haven'?t|"
-    r"has not|hasn'?t|not applicable|doesn'?t apply|not pregnant|no,)\b",
+    r"^\s*(no|nope|nah|none)\b|\b(never|don'?t have|do not have|haven'?t|"
+    r"has not|hasn'?t|not applicable|doesn'?t apply|not pregnant|"
+    r"nothing like that|not that i know|no,)\b",
     re.IGNORECASE,
 )
 YES_RE = re.compile(
     r"^\s*(yes|yeah|yep|yup|correct|definitely|absolutely|sure)\b|"
-    r"\b(i do\b|i am\b|i have\b|that'?s right|yes,)\b",
+    r"\b(i do\b(?!n'?t| not)|that'?s right|yes,)\b",
     re.IGNORECASE,
 )
+
+NUMBER_RE = re.compile(r"\d+(?:\.\d+)?")
+
+# Criteria whose probe polarity is inverted (negatively phrased, e.g. "NO prior
+# diagnosis of...") or whose probe is compound ("...and if so, are you...").
+# A raw yes/no to their probe is semantically ambiguous, so those criteria are
+# always resolved through the confirmation question, which restates the
+# criterion in satisfaction terms.
+NEGATED_CRITERION_RE = re.compile(
+    r"\b(no prior|no history|no known|no current|not currently|has not|"
+    r"have not|does not|is not)\b",
+    re.IGNORECASE,
+)
+
+
+def _needs_confirmation(criterion) -> bool:
+    return bool(NEGATED_CRITERION_RE.search(criterion["text"])) or \
+        ", and if so" in criterion.get("probe", "").lower()
+
+_BOUND_PATTERNS = [
+    (r"between\s+(\d+(?:\.\d+)?)\s*%?\s*(?:and|to|[-\u2013])\s*(\d+(?:\.\d+)?)",
+     lambda m: (float(m.group(1)), float(m.group(2)), True, True)),
+    (r"(\d+(?:\.\d+)?)\s*(?:%|years?|hours?|days?|months?)?\s*(?:to|[-\u2013])\s*"
+     r"(\d+(?:\.\d+)?)",
+     lambda m: (float(m.group(1)), float(m.group(2)), True, True)),
+    (r"(?:at least|minimum of|no fewer than)\s+(\d+(?:\.\d+)?)|"
+     r"(\d+(?:\.\d+)?)[^.]{0,24}?\bor more\b",
+     lambda m: (float(m.group(1) or m.group(2)), float("inf"), True, True)),
+    (r"(?:less than|under|fewer than|below)\s+(\d+(?:\.\d+)?)",
+     lambda m: (float("-inf"), float(m.group(1)), True, False)),
+    (r"(?:at most|no more than|up to)\s+(\d+(?:\.\d+)?)",
+     lambda m: (float("-inf"), float(m.group(1)), True, True)),
+    (r"(?:more than|over|above)\s+(\d+(?:\.\d+)?)",
+     lambda m: (float(m.group(1)), float("inf"), False, True)),
+    (r"(?:within|in) the (?:past|last)\s+(\d+(?:\.\d+)?)",
+     lambda m: (0.0, float(m.group(1)), True, True)),
+]
+
+
+def _criterion_bounds(text):
+    """(lo, hi, lo_inclusive, hi_inclusive) when the criterion states exactly one
+    numeric condition; None when zero or several (multi-constraint criteria fall
+    back to the yes/no confirmation flow)."""
+    lowered = text.lower()
+    found = []
+    for pattern, build in _BOUND_PATTERNS:
+        match = re.search(pattern, lowered)
+        if match:
+            found.append(build(match))
+            lowered = lowered.replace(match.group(0), " ", 1)
+            if any(re.search(p, lowered) for p, _ in _BOUND_PATTERNS):
+                return None  # more than one numeric condition -> ambiguous
+            break
+    return found[0] if found else None
+
+
+def _numeric_answer(criterion, message):
+    """Compare a single number in the reply against the criterion's stated
+    bounds. Returns 'yes' (condition satisfied) / 'no', or None when not
+    applicable (no bounds, or not exactly one number in the reply)."""
+    bounds = _criterion_bounds(criterion["text"])
+    if bounds is None:
+        return None
+    numbers = NUMBER_RE.findall(message)
+    if len(numbers) != 1:
+        return None
+    value = float(numbers[0])
+    lo, hi, lo_inc, hi_inc = bounds
+    ok_lo = value >= lo if lo_inc else value > lo
+    ok_hi = value <= hi if hi_inc else value < hi
+    return "yes" if (ok_lo and ok_hi) else "no"
 FEMALE_RE = re.compile(r"\b(female|woman|girl|f)\b", re.IGNORECASE)
 MALE_RE = re.compile(r"\b(male|man|boy|m)\b", re.IGNORECASE)
 
@@ -197,6 +269,11 @@ def _advance(state: dict, message: str) -> str:
 
     criterion = criteria[state["index"]]
     answer = _parse_yes_no_unknown(message)
+    if not state["confirming"] and answer != "unknown" and _needs_confirmation(criterion):
+        state["confirming"] = True
+        return _confirm_question(criterion)
+    if answer is None and not state["confirming"]:
+        answer = _numeric_answer(criterion, message)
 
     if answer is None and not state["confirming"]:
         state["confirming"] = True

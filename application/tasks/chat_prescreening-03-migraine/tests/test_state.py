@@ -82,11 +82,21 @@ def _last_verdict(messages: list[dict[str, Any]]) -> dict[str, Any] | None:
 
 
 def _ground_truth(transcript: dict[str, Any]) -> dict[str, Any] | None:
+    """Look up the labeled case for this trial, trying every id channel a
+    runner can provide: transcript caseId/personaId (offline runners write
+    these) or the MATRIX_TRIAL_CASE_ID env var (for harnesses that know the
+    case out-of-band). The stock chat harness injects none of them yet, so
+    label checking stays inert there until case-bound personas land."""
     gt_path = TESTS_DIR / "ground_truth.json"
-    persona_id = transcript.get("personaId") or transcript.get("persona_id")
-    if not gt_path.is_file() or not persona_id:
+    case_id = (
+        transcript.get("caseId")
+        or transcript.get("personaId")
+        or transcript.get("persona_id")
+        or os.environ.get("MATRIX_TRIAL_CASE_ID", "").strip()
+    )
+    if not gt_path.is_file() or not case_id:
         return None
-    return json.loads(gt_path.read_text(encoding="utf-8"))["cases"].get(str(persona_id))
+    return json.loads(gt_path.read_text(encoding="utf-8"))["cases"].get(str(case_id))
 
 
 def _optional_score(feedback: dict[str, Any], key: str) -> int | None:

@@ -33,3 +33,11 @@ verdict, and the preliminary-screen disclaimer, and emits
 names one of the **9 labeled test cases** in `tests/ground_truth.json`
 (3 eligible / 5 ineligible / 1 insufficient-information), the predicted label is additionally checked against the
 deterministic ground truth.
+
+Known limitation: the stock chat harness does not yet tag a trial with a case
+id, so the label check only engages for runners that pass one (transcript
+`caseId`/`personaId` or the `MATRIX_TRIAL_CASE_ID` env var); otherwise trials
+verify structurally and report `partially_resolved`. Each case in
+`tests/ground_truth.json` carries its full medical `profile` (including the
+deliberate boundary values), so a case-bound persona cohort can be
+materialized from it once the binding design is agreed.
