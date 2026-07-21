@@ -33,8 +33,9 @@ PROTOCOLS_DIR = Path(__file__).resolve().parent / "protocols"
 
 UNKNOWN_RE = re.compile(
     r"\b(don'?t know|do not know|not sure|unsure|no idea|can'?t remember|"
-    r"cannot remember|not certain|never (checked|measured|tested|asked|got|received)|"
-    r"couldn'?t (tell|say)|can'?t (tell|say|recall)|don'?t (remember|recall)|"
+    r"cannot remember|not certain|"
+    r"never (checked|measured|tested|asked|got|received|saw|seen|counted|kept track)|"
+    r"couldn'?t (tell|say)|(?:can'?t|cannot) (tell|say|recall)|don'?t (remember|recall)|"
     r"don'?t have (it|that|the \w+|my \w+|any \w+) "
     r"(handy|with me|on me|on hand|right now|in front of me)|"
     r"i'?d have to (check|look|ask|find|dig)|would have to (check|look|ask|find|dig))\b",
