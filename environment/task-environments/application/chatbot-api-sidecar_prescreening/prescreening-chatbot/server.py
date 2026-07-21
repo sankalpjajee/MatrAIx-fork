@@ -113,6 +113,10 @@ def _bounds_with_span(text):
             remainder = lowered.replace(match.group(0), " ", 1)
             if any(re.search(p, remainder) for p, _ in _BOUND_PATTERNS):
                 return None  # more than one numeric condition -> ambiguous
+            if re.search(r"\d", remainder):
+                return None  # a leftover number (e.g. CKD "stage 4 or 5" plus
+                # "eGFR below 30") means the reply's number could map to either
+                # arm -> defer to the confirmation question rather than guess
             span = lowered[match.start():min(len(lowered), match.end() + 20)]
             return build(match), span
     return None
