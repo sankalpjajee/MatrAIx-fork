@@ -378,6 +378,15 @@ def health():
     return jsonify({"status": "ok", "protocols": sorted(PROTOCOLS)})
 
 
+@app.get("/ready")
+def ready():
+    # Capability readiness (task-spec #288): the screener can serve its declared
+    # chat path only if at least one protocol loaded. 200 = ready, 503 = not.
+    if PROTOCOLS:
+        return jsonify({"ready": True, "protocols": sorted(PROTOCOLS)})
+    return jsonify({"ready": False, "reason": "no protocols loaded"}), 503
+
+
 @app.post("/v1/messages")
 def post_message():
     payload = request.get_json(silent=True)

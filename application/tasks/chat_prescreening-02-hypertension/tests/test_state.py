@@ -40,18 +40,23 @@ FENCE_RE = re.compile(r"```(?:json)?(.*?)```", re.DOTALL)
 
 
 def _verifier_dir() -> Path:
-    base = (
-        os.environ.get("HARBOR_VERIFIER_DIR")
-        or "/logs/verifier"
-    )
-    path = Path(base)
+    # Canonical resolution (task-spec #262): HARBOR_VERIFIER_DIR in a Harbor
+    # trial, else the mounted /logs/verifier in a Docker sandbox. No
+    # <task-root>/verifier fallback - that is local-dev leakage.
+    explicit = os.environ.get("HARBOR_VERIFIER_DIR")
+    if explicit:
+        path = Path(explicit)
+        path.mkdir(parents=True, exist_ok=True)
+        return path
+    container_default = Path("/logs/verifier")
     try:
-        path.mkdir(parents=True, exist_ok=True)
-        return path
-    except OSError:
-        path = TESTS_DIR.parent / "verifier"
-        path.mkdir(parents=True, exist_ok=True)
-        return path
+        container_default.mkdir(parents=True, exist_ok=True)
+        return container_default
+    except OSError as exc:
+        raise RuntimeError(
+            "HARBOR_VERIFIER_DIR is required when running outside a Harbor "
+            "trial container; point it at jobs/<job>/<trial>/verifier."
+        ) from exc
 
 
 def _load_json(path: Path) -> dict[str, Any]:
