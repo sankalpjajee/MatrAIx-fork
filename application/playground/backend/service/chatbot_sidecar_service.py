@@ -125,6 +125,15 @@ def resolve_health_url(application_id: str) -> str:
         return (
             os.environ.get(spec.primary_env, "").strip() or _default_health_url(spec)
         )
+    if spec.application_id == "prescreening_assistant":
+        # Scoped envs only - never the generic CHATBOT_API_URL fallback, which
+        # belongs to recai and would silently point the probe at a different
+        # sidecar when both are configured.
+        return (
+            os.environ.get(spec.primary_env, "").strip()
+            or os.environ.get(spec.legacy_env or "", "").strip()
+            or _default_health_url(spec)
+        )
     return _sidecar_base_url(
         spec.primary_env,
         spec.legacy_env or "",
