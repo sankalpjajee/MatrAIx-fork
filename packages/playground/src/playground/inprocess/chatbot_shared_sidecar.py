@@ -51,6 +51,7 @@ _PRIMARY_SERVICE_ORDER: tuple[str, ...] = (
     "support-bot",
     "meal-plan-api",
     "tutor-adapter",
+    "prescreening-chatbot",
 )
 
 _SHARED_BY_SERVICE: dict[str, SharedSidecarSpec] = {
@@ -105,6 +106,13 @@ _SHARED_BY_SERVICE: dict[str, SharedSidecarSpec] = {
         build_context="tutor-adapter",
         host_port=8906,
         primary_env="CHATBOT_UPSTREAM_DEEPTUTOR",
+    "prescreening-chatbot": SharedSidecarSpec(
+        application_id="prescreening_assistant",
+        service_name="prescreening-chatbot",
+        build_context="prescreening-chatbot",
+        host_port=8906,
+        primary_env="CHATBOT_UPSTREAM_PRESCREENING",
+        legacy_env="PRESCREENING_CHATBOT_URL",
     ),
 }
 
