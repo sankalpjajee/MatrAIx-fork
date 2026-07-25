@@ -188,10 +188,22 @@ def test_transcript_schema() -> None:
     if ground_truth is not None:
         outcome_status = "resolved" if predicted == ground_truth["label"] else "unresolved"
         resolution_basis = "objective_check"
+        # Name what actually happened in THIS conversation. A reason keyed only
+        # on the label collapses every trial onto the same sentence, which tells
+        # a batch reader nothing about how the screens differed.
+        not_met = list(verdict.get("criteria_not_met") or [])
+        unknown = list(verdict.get("criteria_unknown") or [])
+        if not_met:
+            basis = "ruled out by " + ", ".join(sorted(not_met))
+        elif unknown:
+            basis = "left open by unanswered " + ", ".join(sorted(unknown))
+        else:
+            basis = "cleared on every applicable criterion"
         reason = (
-            f"The screener's final assessment was {predicted}; the case's deterministic "
-            f"ground-truth label is {ground_truth['label']}. The verdict was machine-"
-            f"parsable and the preliminary-screen disclaimer was given."
+            f"The screener took {question_count} question-bearing turns and "
+            f"answered {predicted}, {basis}"
+            + (f", with {', '.join(sorted(unknown))} still unknown" if unknown and not_met else "")
+            + f". This matches the case's ground-truth label {ground_truth['label']}."
         )
     else:
         outcome_status = "partially_resolved"
