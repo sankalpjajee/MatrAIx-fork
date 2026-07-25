@@ -154,7 +154,9 @@ def test_transcript_schema() -> None:
     if stale.exists():
         stale.unlink()
 
-    protocol = _load_json(TESTS_DIR / "protocol.json")
+    # Validate the criterion data ships and parses, even though the checks below
+    # read the screener's own reported criterion ids rather than the file.
+    _load_json(TESTS_DIR / "protocol.json")
     transcript = _load_json(TRANSCRIPT_PATH)
     _require_string(transcript.get("sessionId"), "transcript.sessionId")
     _require_string(transcript.get("domain"), "transcript.domain")
@@ -237,10 +239,25 @@ def test_transcript_schema() -> None:
         conversation_path = "few_reasks_then_resolve"
     else:
         conversation_path = "many_reasks_then_resolve"
+    # Describe the shape of THIS exchange. Naming only the turn count and the
+    # protocol id makes every trial read alike in the batch report.
+    unknown_n = len(verdict.get("criteria_unknown") or [])
+    if confirm_turns == 0:
+        style = "took every answer at face value without a single re-ask"
+    elif confirm_turns == 1:
+        style = "had to re-ask once to pin an answer down"
+    else:
+        style = f"had to re-ask {confirm_turns} times to pin answers down"
+    carried = (
+        "carried 1 criterion it could not settle"
+        if unknown_n == 1
+        else f"carried {unknown_n} criteria it could not settle"
+        if unknown_n
+        else "settled every criterion it raised"
+    )
     process_notes = (
-        f"The screener asked {question_count} question-bearing turns while working "
-        f"through the {protocol.get('protocol_id', 'trial')} eligibility criteria and "
-        "closed with a structured verdict."
+        f"Over {question_count} question-bearing turns the screener {style}, "
+        f"{carried}, and closed with a structured verdict."
     )
 
     payload: dict[str, Any] = {
