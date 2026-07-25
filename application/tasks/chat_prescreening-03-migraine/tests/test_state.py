@@ -37,6 +37,11 @@ DISCLAIMER_RE = re.compile(
     re.IGNORECASE,
 )
 FENCE_RE = re.compile(r"```(?:json)?(.*?)```", re.DOTALL)
+# The screener's confirmation re-ask, used to tell a plain answer from a hedged one.
+CONFIRM_RE = re.compile(
+    r"do you meet this requirement|does this apply to you|yes,\s*no,\s*or not sure",
+    re.IGNORECASE,
+)
 
 
 def _verifier_dir() -> Path:
@@ -214,12 +219,24 @@ def test_transcript_schema() -> None:
             "case, so verdict correctness was not scored against ground truth."
         )
 
-    conversation_path = (
-        "clarify_then_resolve" if outcome_status == "resolved" and question_count > 0
-        else "direct_resolution" if outcome_status == "resolved"
-        else "clarify_then_partial" if question_count > 0
-        else "stalled"
+    # How much re-asking the screener needed. The old form keyed off "did it ask
+    # any question at all", which is always true here, so every trial collapsed
+    # onto one value. Count the explicit confirmation re-asks instead: that is
+    # what actually differs between a user who answers plainly and one who hedges.
+    confirm_turns = sum(
+        1
+        for entry in messages
+        if entry.get("role") == "assistant"
+        and CONFIRM_RE.search(entry.get("content", ""))
     )
+    if outcome_status != "resolved":
+        conversation_path = "clarify_then_partial" if question_count else "stalled"
+    elif confirm_turns == 0:
+        conversation_path = "answered_first_ask"
+    elif confirm_turns <= max(1, question_count // 3):
+        conversation_path = "few_reasks_then_resolve"
+    else:
+        conversation_path = "many_reasks_then_resolve"
     process_notes = (
         f"The screener asked {question_count} question-bearing turns while working "
         f"through the {protocol.get('protocol_id', 'trial')} eligibility criteria and "
