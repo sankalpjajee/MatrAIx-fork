@@ -144,6 +144,69 @@ def test_computer_1_default_window_fills_desktop(tmp_path):
     assert geo.window_y == 0
 
 
+# ---------------------------------------------------------------------------
+# GL flags. The desktop has no GPU, and `--disable-gpu` drops WebGL entirely,
+# so WebGL2-only sites refuse to render ("Betrakta Material Shaders ... require
+# WebGL2, which isn't supported on this device"). Software rasterisation fixes
+# that but costs speed, so it is opt-in per task and must NOT become the default.
+# ---------------------------------------------------------------------------
+
+
+def test_gl_args_default_disables_gpu(tmp_path):
+    env = AsyncMock()
+    session = Computer1Session(environment=env, agent_dir=tmp_path)
+    assert session._gl_args() == ["--disable-gpu"], (
+        "the default must stay --disable-gpu so enabling WebGL for one task "
+        "cannot change Chromium startup for every other CUA task"
+    )
+
+
+def test_gl_args_opt_in_enables_software_webgl(tmp_path):
+    env = AsyncMock()
+    session = Computer1Session(environment=env, agent_dir=tmp_path, enable_webgl=True)
+    args = session._gl_args()
+    assert "--disable-gpu" not in args
+    assert "--use-angle=swiftshader" in args
+
+
+def test_computer_1_webgl_defaults_off_and_forwards(tmp_path):
+    agent = Computer1(
+        logs_dir=tmp_path,
+        model_name="anthropic/claude-sonnet-4-5",
+        enable_episode_logging=False,
+    )
+    assert agent._enable_webgl is False
+    opted_in = Computer1(
+        logs_dir=tmp_path,
+        model_name="anthropic/claude-sonnet-4-5",
+        enable_episode_logging=False,
+        enable_webgl=True,
+    )
+    assert opted_in._enable_webgl is True
+
+
+@pytest.mark.asyncio
+async def test_start_chromium_default_passes_disable_gpu(tmp_path):
+    env = AsyncMock()
+    env.exec.return_value = _ok()
+    session = Computer1Session(environment=env, agent_dir=tmp_path)
+    await session._start_chromium()
+    cmd = env.exec.await_args_list[-1].kwargs["command"]
+    assert "--disable-gpu" in cmd
+    assert "swiftshader" not in cmd
+
+
+@pytest.mark.asyncio
+async def test_start_chromium_webgl_swaps_in_swiftshader(tmp_path):
+    env = AsyncMock()
+    env.exec.return_value = _ok()
+    session = Computer1Session(environment=env, agent_dir=tmp_path, enable_webgl=True)
+    await session._start_chromium()
+    cmd = env.exec.await_args_list[-1].kwargs["command"]
+    assert "--disable-gpu" not in cmd
+    assert "swiftshader" in cmd
+
+
 @pytest.mark.asyncio
 async def test_position_window_maximizes_when_filling_screen(tmp_path):
     env = AsyncMock()

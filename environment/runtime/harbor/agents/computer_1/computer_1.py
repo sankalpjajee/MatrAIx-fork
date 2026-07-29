@@ -608,6 +608,7 @@ class Computer1(BaseAgent):
         runtime_request_timeout_sec: int = 120,
         runtime_action_timeout_sec: float = 60.0,
         enable_episode_logging: bool = True,
+        enable_webgl: bool = False,
         extra_env: dict[str, str] | None = None,
         logger: logging.Logger | None = None,
         mcp_servers: list[MCPServerConfig] | None = None,
@@ -642,6 +643,9 @@ class Computer1(BaseAgent):
             self._validate_vision_support(model_name)
 
         self._model_name = model_name
+        # Opt-in software WebGL for tasks whose site needs it (see
+        # Computer1Session._gl_args); the default keeps --disable-gpu.
+        self._enable_webgl = enable_webgl
         self._extra_env = extra_env
         self._llm_call_kwargs: dict[str, Any] = llm_call_kwargs or {}
         self._max_episodes: int = max_turns if max_turns is not None else 1_000_000
@@ -798,6 +802,7 @@ class Computer1(BaseAgent):
             window_y=self._desktop_geometry.window_y,
             readiness_timeout_sec=self._runtime_readiness_timeout_sec,
             request_timeout_sec=self._runtime_request_timeout_sec,
+            enable_webgl=self._enable_webgl,
             extra_env=self._extra_env,
             user=environment.default_user,
         )

@@ -107,6 +107,19 @@ PLAYGROUND_TASK_INDEX: Dict[str, PlaygroundTaskEntry] = {
         output_artifact="book_interest.json",
         submission_profile="book_interest",
     ),
+    "web-cua-ikea-room-planner": PlaygroundTaskEntry(
+        application_type="web",
+        site_name="IKEA Room Planner",
+        # The trailing `#<design-id>/<scene-id>` fragment is required: without it
+        # the planner hangs on "Preparing your room ..." forever, because it has
+        # no scene to load. Do not trim it to the bare ?roomType=generic URL.
+        site_url=(
+            "https://www.ikea.com/us/en/home-design/room/?roomType=generic"
+            "#1d9a5bb8-08b5-43aa-ab0c-ff91d92c95f9/0943b0b9-198c-4e74-b287-171db3f4ad35"
+        ),
+        output_artifact="room_plan.json",
+        submission_profile="room_plan",
+    ),
     "web-portfoliovisualizer_backtest-allocation": PlaygroundTaskEntry(
         application_type="web",
         site_name="Portfolio Visualizer",

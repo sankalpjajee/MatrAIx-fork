@@ -448,6 +448,7 @@ class Computer1Session:
         request_timeout_sec: int = 120,
         chromium_executable: str = "/usr/bin/chromium",
         webp_quality: int = 80,
+        enable_webgl: bool = False,
         extra_env: dict[str, str] | None = None,
         user: str | int | None = None,
     ) -> None:
@@ -459,6 +460,7 @@ class Computer1Session:
         self._request_timeout_sec = request_timeout_sec
         self._chromium_executable = chromium_executable
         self._webp_quality = webp_quality
+        self._enable_webgl = enable_webgl
 
         self.geometry = DisplayGeometry(
             desktop_width=desktop_width,
@@ -604,13 +606,35 @@ class Computer1Session:
             _bash_inline(novnc_cmd), timeout_sec=60, label="start noVNC", retries=2
         )
 
+    def _gl_args(self) -> list[str]:
+        """Chromium GL flags for the GPU-less Xvfb desktop.
+
+        Default is ``--disable-gpu``: cheapest, and correct for the DOM/2D sites
+        most tasks drive. It does more than skip hardware acceleration, though —
+        it drops WebGL entirely, so a WebGL2-only site refuses to render at all
+        (IKEA's Room Planner: "Betrakta Material Shaders are enabled and require
+        WebGL2, which isn't supported on this device").
+
+        Tasks that need WebGL pass ``enable_webgl=True`` to opt into software
+        rasterisation via ANGLE + SwiftShader, which reports ``webgl2=true`` on
+        the same GPU-less desktop. It is slower than no GL at all, so it stays
+        opt-in rather than becoming the default for every task.
+        """
+        if not self._enable_webgl:
+            return ["--disable-gpu"]
+        return [
+            "--use-gl=angle",
+            "--use-angle=swiftshader",
+            "--enable-unsafe-swiftshader",
+        ]
+
     async def _start_chromium(self) -> None:
         args = [
             self._chromium_executable,
             "--ignore-certificate-errors",
             "--disable-dev-shm-usage",
             "--no-sandbox",
-            "--disable-gpu",
+            *self._gl_args(),
             f"--display={_DEFAULT_DISPLAY}",
             f"--user-data-dir={_CHROME_PROFILE}",
             f"--window-position={self.geometry.window_x},{self.geometry.window_y}",
