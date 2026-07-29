@@ -428,6 +428,48 @@ def _narrative_communication_style(
     )
 
 
+def _narrative_coding_style(
+    dimensions: dict[str, Any],
+    *,
+    by_id: dict[str, dict[str, Any]],
+) -> str:
+    """Coding-style paragraph, rendered only when the persona carries code_* dims.
+
+    Without this, code_* attributes (comment style, naming verbosity, TLDR habit,
+    etc.) never reach the agent narrative, so a code-writing task cannot actually
+    exercise them — the agent has no idea how this persona writes code.
+    """
+    coding_keys = (
+        "code_comment_style",
+        "code_summary_documentation",
+        "code_naming_verbosity",
+        "code_indentation_style",
+        "code_structure_preference",
+        "code_error_handling",
+        "code_function_length",
+        "code_testing_approach",
+        "code_refactoring_frequency",
+    )
+
+    parts: list[str] = []
+    for dim_id in coding_keys:
+        text = _dim_value(dimensions, dim_id)
+        if not text:
+            continue
+        meta = by_id.get(dim_id)
+        label = str((meta or {}).get("label") or dim_id.removeprefix("code_")).lower()
+        parts.append(f"{label}: {text.lower()}")
+    if not parts:
+        return ""
+    if len(parts) == 1:
+        joined = parts[0]
+    elif len(parts) == 2:
+        joined = f"{parts[0]}; {parts[1]}"
+    else:
+        joined = "; ".join(parts[:-1]) + f"; and {parts[-1]}"
+    return _paragraph(f"When I write code, my style is — {joined}")
+
+
 def build_dimension_narrative(
     dimensions: dict[str, Any],
     *,
@@ -444,6 +486,7 @@ def build_dimension_narrative(
         _narrative_personality(dimensions),
         _narrative_interaction(dimensions),
         _narrative_communication_style(dimensions, by_id=by_id),
+        _narrative_coding_style(dimensions, by_id=by_id),
     ]
     return [p for p in paragraphs if p]
 
