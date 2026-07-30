@@ -28,7 +28,7 @@ browsing — the trade-off is that CUA runs are slower and costlier
 |-------|-------|
 | Agent | `persona-computer-1` |
 | Environment | `docker` (Linux Xvfb, `network_mode = "public"`) |
-| Persona | `persona/datasets/bench-dev-sample/persona_0042.yaml` |
+| Persona | `persona/datasets/matraix-persona-dev-sample/persona_0042.yaml` |
 | API key | `ANTHROPIC_API_KEY` (or Bedrock: `AWS_BEARER_TOKEN_BEDROCK` + `AWS_REGION`) |
 | `enable_webgl` | `true` — **required**, see [Notes](#notes) |
 | `max_turns` | `85` — **required on Bedrock**, see [Notes](#notes) |
@@ -41,7 +41,7 @@ export ANTHROPIC_API_KEY=...
 uv run harbor run \
   -a persona-computer-1 \
   -m anthropic/claude-sonnet-4-6 \
-  --ak persona_path=persona/datasets/bench-dev-sample/persona_0042.yaml \
+  --ak persona_path=persona/datasets/matraix-persona-dev-sample/persona_0042.yaml \
   -p application/tasks/web-cua-ikea-room-planner
 ```
 

@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-import hashlib
 import json
 import re
+import shutil
 import yaml
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -28,52 +28,41 @@ PERSONA_CARD_DIMENSIONS = (
     "source",
 )
 
-DEFAULT_PERSONA_POOL = "persona/datasets/bench-dev-sample"
+DEFAULT_PERSONA_POOL = "persona/datasets/matraix-persona-dev-sample"
 DATASETS_DIR = "persona/datasets"
-GENERATED_DATASETS_DIR = "persona/datasets/_generated"
 COHORTS_DIR = "persona/datasets/cohorts"
 # Top-level dirs under persona/datasets that are not selectable pools.
-_DATASETS_SKIP_TOP_LEVEL = frozenset({"_generated", "cohorts"})
+_DATASETS_SKIP_TOP_LEVEL = frozenset({"_generated", "cohorts", "matraix-persona-1m"})
+# Names that cannot be used when saving a pool as a named dataset.
+_RESERVED_DATASET_SLUGS = frozenset(
+    {
+        "_generated",
+        "cohorts",
+        "matraix-persona-1m",
+        "matraix-persona-dev-sample",
+    }
+)
 DIMENSION_CATEGORIES_PATH = "persona/schema/dimension_categories.json"
-# Soft guard against accidental filter explosions during auto top-up /
-# strategy-pool generation. Large cohort tasks (hundreds–thousands of
-# strata cells) are supported; raise further if a strategy needs it.
+# Soft guard for stratify cell cartesian products from dimensionFilters.
 MAX_FILTER_STRATA = 2048
-DEFAULT_STRATEGY_STRATUM_MIN = 2
 CohortKind = Literal["recipe", "frozen"]
 
 
-def is_pool_coverage_error(message: str) -> bool:
-    text = message or ""
-    return (
-        "exceeds matched pool size" in text
-        or "No personas with stratify fields" in text
-        or "sample_size_per_value_group=" in text
-        or "Incomplete stratify coverage" in text
-    )
-
-
 def coverage_recovery_hint(*, task_path: str | None = None) -> str:
-    cleaned = (task_path or "").strip().rstrip("/")
-    strategy = (
-        f"{cleaned}/persona_strategy.json"
-        if cleaned
-        else "application/tasks/<task>/persona_strategy.json"
-    )
+    """Hint when a fixture pool cannot satisfy filters — prefer production 1M."""
+    _ = task_path
     return (
-        "Auto pool top-up was unavailable or failed. Generate a local strategy "
-        "pool manually, then retry:\n"
-        f"  uv run python persona/scripts/generate_dev_personas.py --strategy {strategy}\n"
-        'Point persona_strategy.json "pool" at the printed '
-        "persona/datasets/_generated/... path (gitignored), or pass that pool when sampling."
+        "Pool coverage is too thin for these filters. Sample from "
+        "persona/datasets/matraix-persona-1m, widen dimensionFilters / sources, "
+        "or launch a saved cohort that already has enough matches."
     )
 
 
 def with_coverage_hint(message: str, *, task_path: str | None = None) -> str:
     text = (message or "").strip()
-    if not text or "generate_dev_personas.py --strategy" in text:
+    if not text:
         return text
-    if not is_pool_coverage_error(text):
+    if "matraix-persona-1m" in text:
         return text
     return f"{text}\n\n{coverage_recovery_hint(task_path=task_path)}"
 
@@ -134,6 +123,19 @@ def _persona_profile_markdown(
     return "\n".join(lines)
 
 
+# Lazy-cached Treiver for NL → attribute matching (regex stage; offline).
+_treiver_singleton: Any = None
+
+
+def _get_treiver() -> Any:
+    global _treiver_singleton
+    if _treiver_singleton is None:
+        from persona.extraction import Treiver
+
+        _treiver_singleton = Treiver()
+    return _treiver_singleton
+
+
 @dataclass
 class PersonaPoolService:
     repo_root: Path
@@ -144,6 +146,41 @@ class PersonaPoolService:
 
     def _pool_dir(self, persona_pool: str) -> Path:
         return self.repo_root / persona_pool
+
+    def match_attributes(
+        self,
+        prompt: str,
+        *,
+        use_llm: bool = False,
+    ) -> dict[str, Any]:
+        """Map free-text / NL phrase to selectable catalog attributes (Treiver).
+
+        Default is regex-only (fast, offline). ``use_llm=True`` enables the
+        optional judge path when keys / models are available.
+        """
+        text = (prompt or "").strip()
+        if not text:
+            return {"prompt": "", "attributes": [], "usedLlm": False}
+        treiver = _get_treiver()
+        result = treiver.match(text, use_llm=bool(use_llm), use_embed=bool(use_llm))
+        attributes: list[dict[str, Any]] = []
+        for attr in result.attributes:
+            dim = treiver.schema.get(attr.dimension_id)
+            attributes.append(
+                {
+                    "dimensionId": attr.dimension_id,
+                    "label": (dim.label if dim and dim.label else attr.dimension_id),
+                    "value": attr.value,
+                    "evidence": attr.evidence,
+                    "method": attr.method,
+                    "confidence": float(attr.confidence),
+                }
+            )
+        return {
+            "prompt": text,
+            "attributes": attributes,
+            "usedLlm": bool(result.used_llm),
+        }
 
     def _read_json(self, path: Path) -> dict[str, Any]:
         payload = json.loads(path.read_text(encoding="utf-8"))
@@ -227,11 +264,59 @@ class PersonaPoolService:
         }
 
     def get_catalog(self, persona_pool: str = DEFAULT_PERSONA_POOL) -> dict[str, Any]:
-        summary = self.load_manifest_summary(persona_pool)
-        categories = self.load_dimension_categories(
-            path=str(summary.get("dimensionCategoriesPath") or DIMENSION_CATEGORIES_PATH)
+        from backend.service.persona_1m_pool import (
+            PRODUCTION_1M_COUNT,
+            PRODUCTION_1M_POOL,
+            is_production_1m_root,
+            production_1m_available,
         )
-        return {**summary, "dimensionCategories": categories}
+        from backend.service.persona_taxonomy import build_production_filter_categories
+
+        if is_production_1m_root(persona_pool):
+            source_counts = {
+                "wiki": 323438,
+                "amazon": 97915,
+                "stackoverflow": 113120,
+                "prism": 1487,
+                "gss": 63532,
+                "real_human_survey": 508,
+                "synthetic": 400000,
+            }
+            categories = build_production_filter_categories(
+                repo_root=self.repo_root,
+                persona_sources=list(source_counts.keys()),
+            )
+            return {
+                "pool": PRODUCTION_1M_POOL,
+                "count": PRODUCTION_1M_COUNT if production_1m_available(self.repo_root) else 0,
+                "smokePersonaId": None,
+                "sourceCounts": source_counts,
+                "schemaVersion": "1.0",
+                "dimensionCategoriesPath": "persona/schema/dimensions.json",
+                "dimensionCategories": categories,
+                "kind": "production",
+            }
+
+        summary = self.load_manifest_summary(persona_pool)
+        source_counts = dict(summary.get("sourceCounts") or {})
+        persona_sources = list(source_counts.keys())
+        if not persona_sources:
+            # Fall back to legacy category sources when the pool has no counts.
+            legacy = self.load_dimension_categories(path=DIMENSION_CATEGORIES_PATH)
+            persona_sources = list(legacy.get("personaSources") or [])
+        # Prefer the checked-in dimensions catalog so local YAML pools do not
+        # require the 1M release mirror to be present.
+        dimensions_schema = self.repo_root / "persona/schema/dimensions.json"
+        categories = build_production_filter_categories(
+            repo_root=self.repo_root,
+            schema_path=dimensions_schema if dimensions_schema.is_file() else None,
+            persona_sources=persona_sources,
+        )
+        return {
+            **summary,
+            "dimensionCategoriesPath": "persona/schema/dimensions.json",
+            "dimensionCategories": categories,
+        }
 
     def _is_persona_dataset_dir(self, path: Path) -> bool:
         if not path.is_dir():
@@ -283,10 +368,14 @@ class PersonaPoolService:
     def list_datasets(self) -> list[dict[str, Any]]:
         """Discover selectable persona pools under ``persona/datasets/``.
 
-        Returns checked-in top-level pools first (default ``bench-dev-sample``),
-        then any local ``_generated/*`` strategy pools. Missing default is still
-        surfaced so the UI can keep its fallback option.
+        Surfaces checked-in local pools, plus the production MatrAIx 1M pool.
+        Legacy ``_generated`` synthetic pools are intentionally omitted.
         """
+        from backend.service.persona_1m_pool import (
+            production_1m_available,
+            production_dataset_entry,
+        )
+
         datasets_root = self.repo_root / DATASETS_DIR
         by_pool: dict[str, dict[str, Any]] = {}
 
@@ -301,34 +390,158 @@ class PersonaPoolService:
                     pool=pool, label=child.name, kind="dataset", path=child
                 )
 
-            generated_root = self.repo_root / GENERATED_DATASETS_DIR
-            if generated_root.is_dir():
-                for child in sorted(
-                    generated_root.iterdir(), key=lambda p: p.name.lower()
-                ):
-                    if not self._is_persona_dataset_dir(child):
-                        continue
-                    pool = f"{GENERATED_DATASETS_DIR}/{child.name}"
-                    by_pool[pool] = self._dataset_entry(
-                        pool=pool, label=child.name, kind="generated", path=child
-                    )
+            # Intentionally omit matraix-persona-1m/cohorts/* from Dataset.
+            # Those dirs are launch caches from sampling the production release,
+            # not user-facing sources (listing them next to the 1M root is confusing).
 
         if DEFAULT_PERSONA_POOL not in by_pool:
             by_pool[DEFAULT_PERSONA_POOL] = self._dataset_entry(
                 pool=DEFAULT_PERSONA_POOL,
-                label="bench-dev-sample",
+                label="matraix-persona-dev-sample",
                 kind="dataset",
                 path=self.repo_root / DEFAULT_PERSONA_POOL,
             )
 
+        production = production_dataset_entry(
+            available=production_1m_available(self.repo_root)
+        )
+        by_pool[production["pool"]] = production
+
         ordered = sorted(
             by_pool.values(),
             key=lambda item: (
-                0 if item["default"] else 1 if item["kind"] == "dataset" else 2,
+                0 if item["default"] else
+                1 if item.get("kind") == "production" else
+                2 if item.get("kind") == "dataset" else
+                3,
                 str(item["label"]).lower(),
             ),
         )
         return ordered
+
+    def save_pool_as_dataset(
+        self,
+        *,
+        source_pool: str,
+        name: str,
+        description: str | None = None,
+        overwrite: bool = False,
+    ) -> dict[str, Any]:
+        """Promote a materialized pool (e.g. 1M cohort) to ``persona/datasets/<slug>/``.
+
+        Copies ``persona_*.yaml`` (+ rewritten ``manifest.json``) so the pool
+        appears in the Dataset dropdown and can be reused across tasks.
+        """
+        slug = _cohort_slug(name)
+        if slug in _RESERVED_DATASET_SLUGS or slug.startswith("_"):
+            raise ValueError(
+                f"dataset name '{slug}' is reserved; choose a different name"
+            )
+
+        src_rel = (source_pool or "").strip().rstrip("/")
+        if not src_rel:
+            raise ValueError("source_pool is required")
+        from backend.service.persona_1m_pool import is_production_1m_root
+
+        if is_production_1m_root(src_rel):
+            raise ValueError(
+                "Cannot save the full MatrAIx Persona 1M root as a dataset. "
+                "Generate a cohort first, then save that cohort."
+            )
+
+        src_dir = self._pool_dir(src_rel)
+        if not src_dir.is_dir():
+            raise FileNotFoundError(f"source pool not found: {src_rel}")
+
+        yaml_files = sorted(src_dir.glob("persona_*.yaml"))
+        if not yaml_files:
+            raise ValueError(f"source pool has no persona YAML files: {src_rel}")
+
+        dest_rel = f"{DATASETS_DIR}/{slug}"
+        dest_dir = self.repo_root / dest_rel
+        if dest_dir.exists():
+            if not overwrite:
+                raise FileExistsError(
+                    f"dataset already exists: {dest_rel} (pass overwrite=true to replace)"
+                )
+            if dest_dir.resolve() == src_dir.resolve():
+                raise ValueError("source and destination are the same path")
+            shutil.rmtree(dest_dir)
+        dest_dir.mkdir(parents=True, exist_ok=True)
+
+        source_counts: dict[str, int] = {}
+        manifest_personas: list[dict[str, Any]] = []
+        for yaml_path in yaml_files:
+            dest_yaml = dest_dir / yaml_path.name
+            shutil.copy2(yaml_path, dest_yaml)
+            persona_id = yaml_path.stem.removeprefix("persona_")
+            source = "unknown"
+            card_dims: dict[str, str] = {}
+            try:
+                raw = yaml.safe_load(yaml_path.read_text(encoding="utf-8"))
+            except Exception:  # noqa: BLE001
+                raw = None
+            if isinstance(raw, dict):
+                persona_id = str(raw.get("persona_id") or persona_id)
+                source = str(raw.get("source") or "unknown").strip() or "unknown"
+                dims = raw.get("dimensions")
+                if isinstance(dims, dict):
+                    card_dims = {
+                        key: str(dims[key])
+                        for key in PERSONA_CARD_DIMENSIONS
+                        if key != "source" and dims.get(key) is not None
+                    }
+            source_counts[source] = source_counts.get(source, 0) + 1
+            manifest_personas.append(
+                {
+                    "persona_id": persona_id,
+                    "path": f"{dest_rel}/{yaml_path.name}",
+                    "source": source,
+                    "dimensions": card_dims,
+                }
+            )
+
+        parent_manifest: dict[str, Any] = {}
+        src_manifest_path = src_dir / "manifest.json"
+        if src_manifest_path.is_file():
+            try:
+                parent_manifest = self._read_json(src_manifest_path)
+            except Exception:  # noqa: BLE001
+                parent_manifest = {}
+
+        manifest = {
+            "kind": "saved-persona-dataset",
+            "name": (name or slug).strip(),
+            "description": (description or "").strip(),
+            "count": len(manifest_personas),
+            "seed": parent_manifest.get("seed"),
+            "schema_version": str(parent_manifest.get("schema_version") or "1.0"),
+            "smoke_persona_id": (
+                manifest_personas[0]["persona_id"] if manifest_personas else None
+            ),
+            "source_counts": source_counts,
+            "dimension_categories": str(
+                parent_manifest.get("dimension_categories")
+                or DIMENSION_CATEGORIES_PATH
+            ),
+            "created_at": _utc_now(),
+            "source_pool": src_rel,
+            "parent_pool": parent_manifest.get("parent_pool"),
+            "hf_repo": parent_manifest.get("hf_repo"),
+            "personas": manifest_personas,
+        }
+        (dest_dir / "manifest.json").write_text(
+            json.dumps(manifest, indent=2, ensure_ascii=True) + "\n",
+            encoding="utf-8",
+        )
+        return {
+            "pool": dest_rel,
+            "label": slug,
+            "name": manifest["name"],
+            "count": manifest["count"],
+            "sourcePool": src_rel,
+            "kind": "dataset",
+        }
 
     def _normalize_dimension_filters(
         self, dimension_filters: dict[str, str | list[str]] | None
@@ -346,13 +559,8 @@ class PersonaPoolService:
         return normalized
 
     def _entry_dimensions(self, entry: dict[str, Any]) -> dict[str, Any] | None:
-        dims = entry.get("dimensions")
-        if isinstance(dims, dict):
-            return dims
-        from matraix.persona_job import _persona_dimensions
-
-        loaded = _persona_dimensions(entry, repo_root=self.repo_root)
-        return loaded if isinstance(loaded, dict) else None
+        dims = self._yaml_dimensions(entry)
+        return dims or None
 
     def _entry_matches_dimension_filters(
         self,
@@ -399,17 +607,63 @@ class PersonaPoolService:
             ]
         return matched
 
-    def _persona_card(self, entry: dict[str, Any]) -> dict[str, Any]:
-        dims = entry.get("dimensions")
-        if not isinstance(dims, dict):
-            from matraix.persona_job import _persona_dimensions
+    def _yaml_dimensions(self, entry: dict[str, Any]) -> dict[str, str]:
+        """Load full dimensions from persona YAML when present.
 
-            dims = _persona_dimensions(entry, repo_root=self.repo_root) or {}
+        Manifest entries often store only a small card subset (or none for sparse
+        1M-sourced rows). Detail / cards should prefer the YAML file.
+        """
+        rel_path = str(entry.get("path") or "").strip()
+        candidates: list[Path] = []
+        if rel_path:
+            path = Path(rel_path)
+            candidates.append(path if path.is_absolute() else self.repo_root / path)
+        persona_id = str(entry.get("persona_id") or "").strip()
+        if persona_id:
+            # Common layouts when path is missing / stale.
+            candidates.append(
+                self.repo_root
+                / DEFAULT_PERSONA_POOL
+                / f"persona_{persona_id}.yaml"
+            )
+        for yaml_path in candidates:
+            if not yaml_path.is_file():
+                continue
+            try:
+                raw = yaml.safe_load(yaml_path.read_text(encoding="utf-8"))
+            except Exception:  # noqa: BLE001
+                continue
+            if not isinstance(raw, dict):
+                continue
+            dims = raw.get("dimensions")
+            if not isinstance(dims, dict):
+                continue
+            return {
+                str(key): str(value)
+                for key, value in dims.items()
+                if value is not None and str(value).strip()
+            }
+        dims = entry.get("dimensions")
+        if isinstance(dims, dict):
+            return {
+                str(key): str(value)
+                for key, value in dims.items()
+                if value is not None and str(value).strip()
+            }
+        return {}
+
+    def _persona_card(self, entry: dict[str, Any]) -> dict[str, Any]:
+        dims = self._yaml_dimensions(entry)
         display = {
             key: str(dims[key])
             for key in PERSONA_CARD_DIMENSIONS
-            if isinstance(dims, dict) and dims.get(key)
+            if key != "source" and dims.get(key)
         }
+        # Sparse 1M-sourced rows may lack the usual card dims — show a few
+        # populated attributes so the card is not blank.
+        if not display and dims:
+            for key, value in list(dims.items())[:4]:
+                display[key] = value
         persona_id = str(entry.get("persona_id") or "")
         display_name = str(entry.get("display_name") or "").strip()
         if not display_name:
@@ -423,16 +677,20 @@ class PersonaPoolService:
         if not display_name:
             from matraix.persona_display_name import synthetic_display_name
 
-            display_name = synthetic_display_name(
-                persona_id,
-                dims if isinstance(dims, dict) else {},
-            )
+            display_name = synthetic_display_name(persona_id, dims)
+        source = str(entry.get("source") or "")
+        # Full attribute haystack for Persona World / text search (card dims alone are sparse).
+        search_parts = [persona_id, display_name, source]
+        for key, value in dims.items():
+            search_parts.append(str(key))
+            search_parts.append(str(value))
         return {
             "personaId": persona_id,
             "name": display_name,
-            "source": str(entry.get("source") or ""),
+            "source": source,
             "path": str(entry.get("path") or ""),
             "dimensions": display,
+            "searchText": " ".join(search_parts),
         }
 
     def list_persona_ids(
@@ -444,6 +702,14 @@ class PersonaPoolService:
         cohorts). Falls back to ``persona_*.yaml`` filenames when the manifest
         is missing, incomplete, or too large to load cheaply.
         """
+        from backend.service.persona_1m_pool import is_production_1m_root
+
+        if is_production_1m_root(persona_pool):
+            raise ValueError(
+                "All is not supported on matraix-persona-1m (1,000,000 rows). "
+                "Use Random/Stratified to sample a cohort (up to 10,000)."
+            )
+
         pool_dir = self._pool_dir(persona_pool)
         if not pool_dir.is_dir():
             raise FileNotFoundError("persona pool not found: {}".format(persona_pool))
@@ -501,6 +767,33 @@ class PersonaPoolService:
     ) -> dict[str, Any]:
         import random
 
+        from backend.service.persona_1m_pool import (
+            is_production_1m_root,
+            preview_production_1m,
+        )
+
+        if is_production_1m_root(persona_pool):
+            if persona_ids:
+                raise ValueError(
+                    "Preview specific persona ids from matraix-persona-1m after sampling "
+                    "a cohort (Random/Stratified)."
+                )
+            start = max(0, int(offset))
+            page_size = max(1, int(limit))
+            preview = preview_production_1m(
+                repo_root=self.repo_root,
+                limit=page_size,
+                offset=start,
+                seed=seed,
+            )
+            return {
+                "pool": persona_pool,
+                "personas": preview["personas"],
+                "offset": start,
+                "limit": page_size,
+                "previewCount": preview.get("previewCount"),
+            }
+
         pool_dir = self._pool_dir(persona_pool)
         entries = load_manifest(pool_dir, repo_root=self.repo_root)
         if persona_ids:
@@ -549,6 +842,20 @@ class PersonaPoolService:
         *,
         persona_pool: str = DEFAULT_PERSONA_POOL,
     ) -> dict[str, Any]:
+        from backend.service.persona_1m_pool import (
+            get_production_1m_persona_detail,
+            is_production_1m_pool,
+            is_production_1m_root,
+        )
+
+        # Production 1M root (and orphan ids): resolve from cohort YAML or Parquet.
+        if is_production_1m_root(persona_pool):
+            return get_production_1m_persona_detail(
+                repo_root=self.repo_root,
+                persona_id=persona_id,
+                persona_pool=persona_pool,
+            )
+
         pool_dir = self._pool_dir(persona_pool)
         entries = load_manifest(pool_dir, repo_root=self.repo_root)
         entry = next(
@@ -561,15 +868,17 @@ class PersonaPoolService:
                 (item for item in entries if str(item.get("persona_id") or "") == padded),
                 None,
             )
+        # Cohort path miss → fall back to production lookup (same persona id space).
+        if entry is None and is_production_1m_pool(persona_pool):
+            return get_production_1m_persona_detail(
+                repo_root=self.repo_root,
+                persona_id=persona_id,
+                persona_pool=persona_pool,
+            )
         if entry is None:
             raise FileNotFoundError("persona not found: {}".format(persona_id))
         card = self._persona_card(entry)
-        dims = entry.get("dimensions")
-        if not isinstance(dims, dict):
-            from matraix.persona_job import _persona_dimensions
-
-            dims = _persona_dimensions(entry, repo_root=self.repo_root) or {}
-        full_dimensions = {str(key): str(value) for key, value in dict(dims).items() if value}
+        full_dimensions = self._yaml_dimensions(entry)
         yaml_path = _resolve_persona_yaml_path(
             self.repo_root, entry, persona_id, pool_dir
         )
@@ -586,11 +895,16 @@ class PersonaPoolService:
             path=rel_path,
             yaml_text=yaml_text,
         )
+        from backend.service.persona_taxonomy import build_dimension_groups
+
         return {
             **card,
             "pool": persona_pool,
             "path": rel_path,
             "dimensions": full_dimensions,
+            "dimensionGroups": build_dimension_groups(
+                full_dimensions, repo_root=self.repo_root
+            ),
             "yaml": yaml_text,
             "profileMarkdown": profile_markdown,
         }
@@ -614,153 +928,6 @@ class PersonaPoolService:
             if cleaned:
                 out[dim] = cleaned
         return out
-
-    def _strategy_pool_relpath(
-        self,
-        *,
-        task_path: str | None,
-        list_filters: dict[str, list[str]],
-        sources: list[str] | None,
-    ) -> str:
-        cleaned_task = (task_path or "").strip().rstrip("/")
-        if cleaned_task:
-            slug = re.sub(r"[^a-z0-9]+", "-", Path(cleaned_task).name.lower()).strip("-")
-            return f"{GENERATED_DATASETS_DIR}/strategy-{slug or 'task'}"
-        digest = hashlib.sha1(
-            json.dumps(
-                {"filters": list_filters, "sources": list(sources or [])},
-                sort_keys=True,
-            ).encode("utf-8")
-        ).hexdigest()[:10]
-        return f"{GENERATED_DATASETS_DIR}/filters-{digest}"
-
-    def ensure_filter_coverage_pool(
-        self,
-        *,
-        dimension_filters: dict[str, str | list[str]] | None,
-        sources: list[str] | None = None,
-        sample_size: int = 1,
-        stratify_fields: list[str] | None = None,
-        sample_size_per_value_group: int | None = None,
-        task_path: str | None = None,
-        seed: int = 42,
-    ) -> dict[str, Any]:
-        """Generate (or reuse) a local ``_generated`` pool that covers the filters."""
-        from matraix.persona_generator import (
-            PERSONA_SOURCES,
-            build_filter_strata,
-            filter_feasible_strata,
-            generate_persona_pool,
-            write_persona_dataset,
-        )
-
-        list_filters = self._filters_as_lists(self._normalize_dimension_filters(dimension_filters))
-        if not list_filters:
-            raise ValueError(
-                "Cannot auto-generate a strategy pool without dimensionFilters"
-            )
-
-        try:
-            strata = build_filter_strata(list_filters, max_strata=MAX_FILTER_STRATA)
-        except ValueError as exc:
-            raise ValueError(str(exc)) from exc
-        strata, dropped = filter_feasible_strata(strata)
-        if not strata:
-            raise ValueError(
-                "dimensionFilters produced zero feasible strata after consistency filtering"
-            )
-
-        if isinstance(sample_size_per_value_group, int) and sample_size_per_value_group >= 1:
-            stratum_min = max(DEFAULT_STRATEGY_STRATUM_MIN, sample_size_per_value_group)
-        elif sample_size >= 1:
-            stratum_min = max(
-                DEFAULT_STRATEGY_STRATUM_MIN,
-                (sample_size + len(strata) - 1) // len(strata),
-            )
-        else:
-            stratum_min = DEFAULT_STRATEGY_STRATUM_MIN
-
-        out_rel = self._strategy_pool_relpath(
-            task_path=task_path,
-            list_filters=list_filters,
-            sources=sources,
-        )
-        out_dir = self.repo_root / out_rel
-
-        if out_dir.is_dir():
-            try:
-                self._sample_pool_inner(
-                    persona_pool=out_rel,
-                    sample_size=max(1, sample_size),
-                    seed=seed,
-                    sources=sources,
-                    dimension_filters=dimension_filters,
-                    stratify_fields=stratify_fields,
-                    sample_size_per_value_group=sample_size_per_value_group,
-                )
-                matched = self.filter_pool(
-                    persona_pool=out_rel,
-                    sources=sources,
-                    dimension_filters=dimension_filters,
-                )
-                return {
-                    "pool": out_rel,
-                    "count": len(matched),
-                    "strataCount": len(strata),
-                    "droppedStrata": len(dropped),
-                    "reused": True,
-                }
-            except ValueError as exc:
-                if not is_pool_coverage_error(str(exc)):
-                    raise
-
-        source_tuple: tuple[str, ...]
-        if sources:
-            cleaned_sources = tuple(s.strip() for s in sources if str(s).strip())
-            source_tuple = cleaned_sources or PERSONA_SOURCES
-        else:
-            source_tuple = PERSONA_SOURCES
-
-        personas = generate_persona_pool(
-            count=0,
-            seed=seed,
-            stratum_top_up=strata,
-            min_per_stratum=stratum_min,
-            sources=source_tuple,
-            include_smoke=False,
-        )
-        kind = Path(out_rel).name
-        manifest = write_persona_dataset(
-            out_dir=out_dir,
-            personas=personas,
-            repo_root=self.repo_root,
-            kind=kind,
-            seed=seed,
-            smoke_persona_id="0042",
-        )
-        manifest["stratum_top_up"] = {
-            "min_per_stratum": stratum_min,
-            "strata_count": len(strata),
-            "dropped_strata": len(dropped),
-            "task_path": (task_path or "").strip() or None,
-            "dimensionFilters": list_filters,
-            "stratifyFields": [
-                str(field).removeprefix("dimensions.").strip()
-                for field in (stratify_fields or [])
-                if str(field).strip()
-            ],
-        }
-        (out_dir / "manifest.json").write_text(
-            json.dumps(manifest, indent=2) + "\n",
-            encoding="utf-8",
-        )
-        return {
-            "pool": out_rel,
-            "count": int(manifest.get("count") or len(personas)),
-            "strataCount": len(strata),
-            "droppedStrata": len(dropped),
-            "reused": False,
-        }
 
     def _expected_stratify_strata(
         self,
@@ -844,10 +1011,25 @@ class PersonaPoolService:
         stratify_fields: list[str] | None = None,
         sample_size_per_value_group: int | None = None,
         task_path: str | None = None,
-        auto_ensure_strategy_pool: bool = True,
     ) -> dict[str, Any]:
+        from backend.service.persona_1m_pool import (
+            is_production_1m_root,
+            sample_production_1m,
+        )
+
         list_filters = self._filters_as_lists(self._normalize_dimension_filters(dimension_filters))
-        can_auto_ensure = auto_ensure_strategy_pool and bool(list_filters)
+
+        # Production 1M: sample + materialize a YAML cohort. Never synthesize.
+        if is_production_1m_root(persona_pool):
+            return sample_production_1m(
+                repo_root=self.repo_root,
+                sample_size=sample_size,
+                seed=seed,
+                sources=sources,
+                dimension_filters=list_filters or None,
+                stratify_fields=stratify_fields,
+                sample_size_per_value_group=sample_size_per_value_group,
+            )
 
         # Stratified quotas:
         # - sampleSizePerValueGroup set → N per cell (primary); sampleSize is not a clip.
@@ -868,25 +1050,22 @@ class PersonaPoolService:
             and sample_size < len(expected)
         ):
             raise ValueError(
-                "sampleSize={} is below the stratified cell count={} "
-                "(need ≥1 persona per combination). Raise sampleSize, or set "
-                "sampleSizePerValueGroup and omit sampleSize.".format(
-                    sample_size, len(expected)
+                with_coverage_hint(
+                    "sampleSize={} is below the stratified cell count={} "
+                    "(need ≥1 persona per combination). Raise sampleSize, set "
+                    "sampleSizePerValueGroup, or sample from matraix-persona-1m.".format(
+                        sample_size, len(expected)
+                    ),
+                    task_path=task_path,
                 )
             )
 
-        # Coverage quota used when synthesizing thin cells.
-        # sampleSize-only: share total N across cells (ceil), then sample/cap.
-        if explicit_per_cell:
-            ensure_per_cell = int(sample_size_per_value_group)
-        elif expected:
-            ensure_per_cell = max(1, (sample_size + len(expected) - 1) // len(expected))
-        else:
-            ensure_per_cell = 1
-
-        # Empty/thin stratify cells are skipped or fail at sample time — detect
-        # shortfalls up front and synthesize a local pool before sampling.
-        if can_auto_ensure and stratify_fields and expected is not None:
+        if stratify_fields and expected is not None:
+            per_cell = (
+                int(sample_size_per_value_group)
+                if explicit_per_cell
+                else max(1, (sample_size + len(expected) - 1) // len(expected))
+            )
             matched = self.filter_pool(
                 persona_pool=persona_pool,
                 sources=sources,
@@ -895,39 +1074,11 @@ class PersonaPoolService:
             gap = self._stratify_coverage_gap_message(
                 matched,
                 stratify_fields=list(stratify_fields),
-                sample_size_per_value_group=ensure_per_cell,
+                sample_size_per_value_group=per_cell,
                 expected_strata=expected,
             )
             if gap:
-                try:
-                    ensured = self.ensure_filter_coverage_pool(
-                        dimension_filters=dimension_filters,
-                        sources=sources,
-                        sample_size=sample_size,
-                        stratify_fields=stratify_fields,
-                        sample_size_per_value_group=ensure_per_cell,
-                        task_path=task_path,
-                        seed=seed,
-                    )
-                    result = self._sample_pool_inner(
-                        persona_pool=str(ensured["pool"]),
-                        sample_size=sample_size,
-                        seed=seed,
-                        sources=sources,
-                        dimension_filters=dimension_filters,
-                        stratify_fields=stratify_fields,
-                        sample_size_per_value_group=sample_size_per_value_group,
-                    )
-                    result["poolEnsured"] = True
-                    result["poolReused"] = bool(ensured.get("reused"))
-                    return result
-                except Exception as ensure_exc:  # noqa: BLE001
-                    raise ValueError(
-                        with_coverage_hint(
-                            f"{gap}\n\nAuto pool top-up failed: {ensure_exc}",
-                            task_path=task_path,
-                        )
-                    ) from ensure_exc
+                raise ValueError(with_coverage_hint(gap, task_path=task_path))
 
         try:
             return self._sample_pool_inner(
@@ -940,39 +1091,7 @@ class PersonaPoolService:
                 sample_size_per_value_group=sample_size_per_value_group,
             )
         except ValueError as exc:
-            message = str(exc)
-            can_ensure = can_auto_ensure and is_pool_coverage_error(message)
-            if not can_ensure:
-                raise ValueError(with_coverage_hint(message, task_path=task_path)) from exc
-            try:
-                ensured = self.ensure_filter_coverage_pool(
-                    dimension_filters=dimension_filters,
-                    sources=sources,
-                    sample_size=sample_size,
-                    stratify_fields=stratify_fields,
-                    sample_size_per_value_group=sample_size_per_value_group,
-                    task_path=task_path,
-                    seed=seed,
-                )
-                result = self._sample_pool_inner(
-                    persona_pool=str(ensured["pool"]),
-                    sample_size=sample_size,
-                    seed=seed,
-                    sources=sources,
-                    dimension_filters=dimension_filters,
-                    stratify_fields=stratify_fields,
-                    sample_size_per_value_group=sample_size_per_value_group,
-                )
-                result["poolEnsured"] = True
-                result["poolReused"] = bool(ensured.get("reused"))
-                return result
-            except Exception as ensure_exc:  # noqa: BLE001 — surface as sample failure
-                raise ValueError(
-                    with_coverage_hint(
-                        f"{message}\n\nAuto pool top-up failed: {ensure_exc}",
-                        task_path=task_path,
-                    )
-                ) from ensure_exc
+            raise ValueError(with_coverage_hint(str(exc), task_path=task_path)) from exc
 
     def _sample_pool_inner(
         self,
@@ -1046,8 +1165,6 @@ class PersonaPoolService:
             "personaIds": [row["personaId"] for row in personas if row["personaId"]],
             "personas": personas,
             "stratifyFields": list(stratify_fields or []),
-            "poolEnsured": False,
-            "poolReused": False,
         }
 
     def _cohorts_root(self) -> Path:

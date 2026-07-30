@@ -13,11 +13,18 @@
     "intent": [
       "Vent / support",
       "Get task done"
+    ],
+    "cog_patience": [
+      "Very high",
+      "High",
+      "Moderate",
+      "Low",
+      "None"
     ]
   },
   "sampleSizePerValueGroup": 1,
   "stratifyFields": [
-    "patience_level",
+    "cog_patience",
     "age_bracket"
   ]
 }

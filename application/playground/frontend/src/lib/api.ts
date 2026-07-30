@@ -10,6 +10,7 @@ import type {
   HarborJobStatusResponse,
   HarborTrialEventsResponse,
   PersonaDatasetListResponse,
+  PersonaMatchAttributesResponse,
   PersonaPoolCatalog,
   PersonaPoolCardsResponse,
   PersonaPoolIdsResponse,
@@ -216,6 +217,23 @@ export const api = {
 
   listPersonaDatasets: () =>
     request<PersonaDatasetListResponse>("/api/persona-pool/datasets"),
+  savePersonaDataset: (body: {
+    sourcePool: string;
+    name: string;
+    description?: string;
+    overwrite?: boolean;
+  }) =>
+    request<{
+      pool: string;
+      label: string;
+      name: string;
+      count: number;
+      sourcePool: string;
+      kind: string;
+    }>("/api/persona-pool/datasets", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
   listPersonaPoolIds: (pool = PERSONA_BENCH_POOL) =>
     request<PersonaPoolIdsResponse>(
       `/api/persona-pool/ids?${new URLSearchParams({ pool }).toString()}`,
@@ -224,6 +242,11 @@ export const api = {
     request<PersonaPoolCatalog>(
       `/api/persona-pool/catalog?${new URLSearchParams({ pool }).toString()}`,
     ),
+  matchPersonaAttributes: (prompt: string, useLlm = false) =>
+    request<PersonaMatchAttributesResponse>("/api/persona-pool/match-attributes", {
+      method: "POST",
+      body: JSON.stringify({ prompt, useLlm }),
+    }),
   getPersonaPoolCards: async (input?: {
     pool?: string;
     limit?: number;
@@ -234,11 +257,12 @@ export const api = {
   }) => {
     const personaIds = input?.personaIds?.slice(0, PERSONA_CARD_PREVIEW_LIMIT);
     const requestedLimit = input?.limit ?? personaIds?.length ?? 10;
-    const limit = Math.min(
-      Math.max(1, requestedLimit),
-      PERSONA_CARD_PREVIEW_LIMIT,
-      PERSONA_POOL_CARDS_LIMIT_MAX,
-    );
+    // Only cap to the selection-preview limit when resolving specific ids.
+    // Browse/paging uses the backend max (500) so 1M preview can stream in pages.
+    const limitCap = personaIds?.length
+      ? Math.min(PERSONA_CARD_PREVIEW_LIMIT, PERSONA_POOL_CARDS_LIMIT_MAX)
+      : PERSONA_POOL_CARDS_LIMIT_MAX;
+    const limit = Math.min(Math.max(1, requestedLimit), limitCap);
     return normalizePersonaPoolCardsResponse(
       await request<PersonaPoolCardsResponse>(
         `/api/persona-pool/personas${qs({
@@ -291,7 +315,7 @@ export const api = {
           })}`,
         ),
       );
-      if (byQuery.profileMarkdown?.trim()) return byQuery;
+      if (byQuery.profileMarkdown?.trim() || byQuery.personaId) return byQuery;
     } catch {
       // Fall through to path-style endpoint on older backends.
     }
@@ -316,13 +340,11 @@ export const api = {
     stratifyFields?: string[];
     sampleSizePerValueGroup?: number;
     taskPath?: string;
-    autoEnsureStrategyPool?: boolean;
   }) =>
     request<PersonaPoolSampleResult>("/api/persona-pool/sample", {
       method: "POST",
       body: JSON.stringify({
         pool: PERSONA_BENCH_POOL,
-        autoEnsureStrategyPool: true,
         ...body,
       }),
     }),

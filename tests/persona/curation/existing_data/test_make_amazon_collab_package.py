@@ -232,7 +232,7 @@ def test_build_package_from_synthetic_histories_writes_cv_tasks_and_archive(tmp_
     assert assignment["range_end"] == 2
     assert assignment["cv_folds"] == 3
     assert assignment["min_support_folds"] == 2
-    assert assignment["max_reviews_per_user"] == 90
+    assert assignment["max_reviews_per_user"] == 200
     assert assignment["dimensions_scope"] == "amazon_supported"
     assert assignment["task_count"] == 2
     assert assignment["dimension_count"] == 2
@@ -490,7 +490,7 @@ def test_histories_with_fewer_than_two_usable_reviews_fail(tmp_path: Path):
     _write_dimensions(dimensions)
     _write_mapping(mapping)
 
-    with pytest.raises(ValueError, match="fewer than 2 usable reviews"):
+    with pytest.raises(ValueError, match="fewer than 2 text reviews after filtering"):
         build_amazon_collab_package(
             user_histories_path=histories,
             dimensions_path=dimensions,
@@ -623,11 +623,13 @@ def test_alias_title_and_review_text_are_usable_when_primary_fields_are_whitespa
     assert task["review_count"] == 2
     assert task["selected_review_count"] == 2
     assert task["effective_cv_folds"] == 2
-    assert "title: Alias product title one" in task["profile_text"]
+    assert "product_title: Alias product title one" in task["profile_text"]
     assert "text: Alias review text one." in task["profile_text"]
-    assert "title: Alias product title two" in task["profile_text"]
+    assert "product_title: Alias product title two" in task["profile_text"]
     assert "text: Alias review text two." in task["profile_text"]
-    assert "title: (untitled)" not in task["profile_text"]
+    # These reviews carry no review-title alias, so review_title legitimately
+    # renders the placeholder; the product title must never fall back to it.
+    assert "product_title: (untitled)" not in task["profile_text"]
 
 
 def test_packaged_mock_harness_run_is_conformant(tmp_path: Path):

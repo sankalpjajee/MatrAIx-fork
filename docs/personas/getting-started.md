@@ -115,7 +115,7 @@ export ANTHROPIC_API_KEY="sk-ant-..."
 uv run harbor run \
   -a persona-claude-code \
   -m anthropic/claude-sonnet-4-6 \
-  --ak persona_path=persona/datasets/bench-dev-sample/persona_0042.yaml \
+  --ak persona_path=persona/datasets/matraix-persona-dev-sample/persona_0042.yaml \
   -p persona/tasks/example-survey_product-feedback
 ```
 

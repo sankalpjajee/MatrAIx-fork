@@ -2,6 +2,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 
 import { api } from "@/lib/api";
+import { takePersonaHandoff, peekPersonaHandoff } from "@/lib/personaHandoffStorage";
+import { useUrlState } from "@/lib/useUrlState";
 import type { HarborCockpitTaskKind } from "@/lib/harborCockpitMappers";
 import type { ConfigOptionsResponse, PlaygroundPersona, TaskPersonaStrategy } from "@/lib/types";
 import { PERSONA_BENCH_POOL } from "@/lib/types";
@@ -10,6 +12,7 @@ import {
   defaultPersonaSetup,
   hasStoredPersonaSetup,
   readCockpitPersonaSetup,
+  sanitizePersonaPool,
   setupFromPersonaStrategy,
   writeCockpitPersonaSetup,
   type CockpitPersonaSetupRecord,
@@ -19,10 +22,26 @@ import {
   type PersonaSamplingMode,
 } from "./personaSamplingTypes";
 
+function applyPersonaHandoffToSetup(
+  handoff: { pool: string; personaIds: string[] },
+  base: CockpitPersonaSetupRecord,
+): CockpitPersonaSetupRecord {
+  const ids = handoff.personaIds.filter(Boolean);
+  return {
+    ...base,
+    selectedPersonaIds: ids,
+    personaPool: sanitizePersonaPool(handoff.pool) || base.personaPool || PERSONA_BENCH_POOL,
+    samplingMode: ids.length > 1 ? "random" : "single",
+    useTaskDefaultStrategy: false,
+    taskDefaultStrategyDismissed: true,
+  };
+}
+
 export function useSetupPersonaSampling(
   options: ConfigOptionsResponse | null,
   taskKind: HarborCockpitTaskKind,
   taskPath: string | null = null,
+  isActive = true,
 ) {
   const fallbackPersonaModel =
     options?.environment.personaModel ?? "anthropic/claude-haiku-4-5";
@@ -44,7 +63,9 @@ export function useSetupPersonaSampling(
   );
   const [seed] = useState(42);
   const [parallelTrials, setParallelTrials] = useState(initial.parallelTrials);
-  const [personaPool, setPersonaPool] = useState(initial.personaPool || PERSONA_BENCH_POOL);
+  const [personaPool, setPersonaPool] = useState(
+    sanitizePersonaPool(initial.personaPool) || PERSONA_BENCH_POOL,
+  );
   const [persona, setPersona] = useState<PlaygroundPersona | null>(null);
   const [taskPersonaStrategy, setTaskPersonaStrategy] = useState<TaskPersonaStrategy | null>(null);
   const [useTaskDefaultStrategy, setUseTaskDefaultStrategyState] = useState(
@@ -55,6 +76,8 @@ export function useSetupPersonaSampling(
   );
   const hydratedPathRef = useRef<string | null>(null);
   const skipNextPersistRef = useRef(false);
+  const handoffAppliedRef = useRef(false);
+  const { state: urlState, setState: setUrlState } = useUrlState();
 
   const strategyQuery = useQuery({
     queryKey: ["task-persona-strategy", normalizedPath],
@@ -77,7 +100,7 @@ export function useSetupPersonaSampling(
     setSampleSizePerValueGroup(record.sampleSizePerValueGroup);
     setPersonaModel(record.personaModel);
     setParallelTrials(record.parallelTrials);
-    setPersonaPool(record.personaPool || PERSONA_BENCH_POOL);
+    setPersonaPool(sanitizePersonaPool(record.personaPool));
     setUseTaskDefaultStrategyState(record.useTaskDefaultStrategy);
     setTaskDefaultStrategyDismissed(record.taskDefaultStrategyDismissed === true);
   }, []);
@@ -137,8 +160,9 @@ export function useSetupPersonaSampling(
     const hasTaskSpecificStore = hasStoredPersonaSetup(path);
     const effectiveModel = hasTaskSpecificStore ? stored.personaModel : fallbackPersonaModel;
 
+    let applied: CockpitPersonaSetupRecord;
     if (strategy && !dismissed) {
-      const applied = setupFromPersonaStrategy(strategy, fallbackPersonaModel, {
+      applied = setupFromPersonaStrategy(strategy, fallbackPersonaModel, {
         ...defaultPersonaSetup(fallbackPersonaModel),
         personaModel: effectiveModel,
         parallelTrials: stored.parallelTrials,
@@ -149,39 +173,78 @@ export function useSetupPersonaSampling(
       if (stored.selectedPersonaIds.length > 0) {
         applied.selectedPersonaIds = stored.selectedPersonaIds;
       }
-      applySetupRecord(applied);
-      hydratedPathRef.current = path;
-      return;
-    }
-
-    if (hasTaskSpecificStore) {
-      applySetupRecord({
+    } else if (hasTaskSpecificStore) {
+      applied = {
         ...stored,
         useTaskDefaultStrategy: Boolean(strategy) && stored.useTaskDefaultStrategy,
         taskDefaultStrategyDismissed: dismissed,
+      };
+    } else {
+      applied = setupFromPersonaStrategy(strategy, fallbackPersonaModel, {
+        ...defaultPersonaSetup(fallbackPersonaModel),
+        personaModel: effectiveModel,
+        parallelTrials: stored.parallelTrials,
       });
-      hydratedPathRef.current = path;
-      return;
+      if (stored.selectedPersonaIds.length > 0) {
+        applied.selectedPersonaIds = stored.selectedPersonaIds;
+      }
     }
 
-    const applied = setupFromPersonaStrategy(strategy, fallbackPersonaModel, {
-      ...defaultPersonaSetup(fallbackPersonaModel),
-      personaModel: effectiveModel,
-      parallelTrials: stored.parallelTrials,
-    });
-    if (stored.selectedPersonaIds.length > 0) {
-      applied.selectedPersonaIds = stored.selectedPersonaIds;
+    const handoff = isActive ? peekPersonaHandoff() : null;
+    if (handoff && handoff.personaIds.length > 0) {
+      applied = applyPersonaHandoffToSetup(handoff, applied);
+      takePersonaHandoff();
+      handoffAppliedRef.current = true;
+      if (urlState.pgPersonaHandoff) {
+        setUrlState({ pgPersonaHandoff: null });
+      }
     }
+
     applySetupRecord(applied);
     hydratedPathRef.current = path;
   }, [
     applySetupRecord,
     fallbackPersonaModel,
+    isActive,
     normalizedPath,
+    setUrlState,
     strategyQuery.data,
     strategyQuery.isFetching,
     strategyQuery.isLoading,
     taskKind,
+    urlState.pgPersonaHandoff,
+  ]);
+
+  // Handoff while already on a hydrated task (Persona World → Playground).
+  useEffect(() => {
+    if (urlState.pgPersonaHandoff === "1") {
+      handoffAppliedRef.current = false;
+    }
+  }, [urlState.pgPersonaHandoff]);
+
+  useEffect(() => {
+    if (!isActive) return;
+    if (handoffAppliedRef.current) return;
+    if (!normalizedPath || hydratedPathRef.current !== normalizedPath) return;
+    if (urlState.pgPersonaHandoff !== "1" && !peekPersonaHandoff()) return;
+
+    const handoff = takePersonaHandoff();
+    if (!handoff?.personaIds.length) {
+      if (urlState.pgPersonaHandoff) setUrlState({ pgPersonaHandoff: null });
+      return;
+    }
+    handoffAppliedRef.current = true;
+    const base = readCockpitPersonaSetup(taskKind, fallbackPersonaModel, normalizedPath);
+    applySetupRecord(applyPersonaHandoffToSetup(handoff, base));
+    setUrlState({ pgPersonaHandoff: null });
+  }, [
+    applySetupRecord,
+    fallbackPersonaModel,
+    isActive,
+    normalizedPath,
+    setUrlState,
+    taskKind,
+    urlState.pgPersonaHandoff,
   ]);
 
   useEffect(() => {
@@ -236,7 +299,7 @@ export function useSetupPersonaSampling(
     setPersona({
       id,
       name: `persona-${id}`,
-      source: "bench-dev-sample",
+      source: "matraix-persona-dev-sample",
     });
   }, [selectedPersonaIds]);
 

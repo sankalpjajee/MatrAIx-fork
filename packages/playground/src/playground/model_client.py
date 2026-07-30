@@ -6,6 +6,10 @@ import urllib.error
 import urllib.request
 from typing import Any, Dict, Optional
 
+# Large survey envelopes (e.g. CFPB ~134 answers) need far more than a short chat reply.
+# 1200 truncates mid-JSON; keep headroom once the system prompt already carries the
+# full 1290-dim persona profile + questionnaire.
+from matraix.persona_agent_context import SURVEY_MAX_OUTPUT_TOKENS as ANTHROPIC_JSON_MAX_TOKENS
 from playground.openai_client import (
     OpenAIChatClient,
     coerce_json,
@@ -13,10 +17,6 @@ from playground.openai_client import (
 )
 
 DASHSCOPE_DEFAULT_BASE_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1"
-
-# Large survey envelopes (e.g. CFPB ~134 answers) need far more than a short chat reply.
-# 1200 truncates mid-JSON; 8192 covers compact one-shot instruments with headroom.
-ANTHROPIC_JSON_MAX_TOKENS = 8192
 
 
 def dashscope_model_id(model: str) -> str:

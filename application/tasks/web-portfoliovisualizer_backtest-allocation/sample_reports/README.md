@@ -30,7 +30,7 @@ export AWS_REGION=us-east-1
 uv run harbor run \
   -a persona-browser-use \
   -m bedrock/us.anthropic.claude-sonnet-4-5-20250929-v1:0 \
-  --ak persona_path=persona/datasets/bench-dev-sample/persona_0042.yaml \
+  --ak persona_path=persona/datasets/matraix-persona-dev-sample/persona_0042.yaml \
   -p application/tasks/web-portfoliovisualizer_backtest-allocation
 # then open the job in the Playground Runs view and click "Download PDF"
 ```

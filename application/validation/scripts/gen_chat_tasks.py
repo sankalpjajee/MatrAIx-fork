@@ -6,7 +6,8 @@ fixed; only the target attribute + persona_strategy change. Style attributes
 manifest in the USER's chat messages; judged from the trajectory afterwards.
 """
 from __future__ import annotations
-import os, shutil, re
+import shutil
+import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[3]

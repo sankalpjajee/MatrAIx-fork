@@ -227,7 +227,7 @@ export function SurveyEvalCockpit({
     taskPersonaStrategy,
     useTaskDefaultStrategy,
     setUseTaskDefaultStrategy,
-  } = useSetupPersonaSampling(options, "survey", setupTaskPath);
+  } = useSetupPersonaSampling(options, "survey", setupTaskPath, isActive);
   const {
     batchJobName,
     batchTaskId,

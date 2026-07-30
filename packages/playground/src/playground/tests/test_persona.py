@@ -6,7 +6,7 @@ def test_loads_curated_catalog():
     ps = load_personas()
     ids = [p.id for p in ps]
     assert len(ids) == len(set(ids))            # unique ids
-    # The checked-in bench-dev-sample is the canonical local catalog.
+    # The checked-in matraix-persona-dev-sample is the canonical local catalog.
     assert len(ps) == 200
     assert all(p.source for p in ps)
     assert {"Nemotron", "OASIS", "PersonaHub", "PRIMEX"} <= {p.source for p in ps}

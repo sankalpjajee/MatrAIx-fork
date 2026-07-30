@@ -12,6 +12,13 @@
     ],
     "intent": [
       "Get task done"
+    ],
+    "tech_savviness": [
+      "Digital native",
+      "Comfortable",
+      "Cautious adopter",
+      "Reluctant",
+      "Avoidant"
     ]
   },
   "sampleSizePerValueGroup": 1,

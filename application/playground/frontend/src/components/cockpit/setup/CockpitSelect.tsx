@@ -29,6 +29,11 @@ export interface CockpitSelectProps {
   wrapOptions?: boolean;
   /** Make the open menu wider than the trigger for long option text. */
   wideMenu?: boolean;
+  /**
+   * When false, option ``meta`` only appears in the open menu — not on the
+   * closed trigger (useful for Dataset counts that clutter the compact field).
+   */
+  showSelectedMeta?: boolean;
 }
 
 export function CockpitSelect({
@@ -42,6 +47,7 @@ export function CockpitSelect({
   labelClassName,
   wrapOptions = false,
   wideMenu = false,
+  showSelectedMeta = true,
 }: CockpitSelectProps) {
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -122,13 +128,15 @@ export function CockpitSelect({
       ref={rootRef}
       className={inlineLabel ? "flex items-center gap-2" : "flex flex-col gap-1.5"}
     >
-      <span
-        className={`text-[13px] font-medium text-text-dim normal-case tracking-normal ${
-          inlineLabel ? "shrink-0" : ""
-        } ${labelClassName ?? ""}`}
-      >
-        {label}
-      </span>
+      {label ? (
+        <span
+          className={`text-[13px] font-medium text-text-dim normal-case tracking-normal ${
+            inlineLabel ? "shrink-0" : ""
+          } ${labelClassName ?? ""}`}
+        >
+          {label}
+        </span>
+      ) : null}
       <div className={inlineLabel ? "relative min-w-0 flex-1" : "relative"}>
         <button
           type="button"
@@ -148,7 +156,7 @@ export function CockpitSelect({
             >
               {selected?.label ?? value}
             </span>
-            {selected?.meta ? (
+            {showSelectedMeta && selected?.meta ? (
               <span
                 className={`block text-[12px] text-text-dim ${
                   wrapOptions ? "whitespace-normal break-words leading-snug" : "truncate"
@@ -172,9 +180,9 @@ export function CockpitSelect({
             tabIndex={-1}
             onKeyDown={onMenuKey}
             ref={(el) => el?.focus()}
-            className={`pop-in custom-scrollbar absolute left-0 top-full z-40 mt-1 max-h-80 overflow-auto rounded-lg border border-outline/60 bg-surface-lowest p-1 shadow-2xl outline-none ${
+            className={`pop-in custom-scrollbar absolute left-0 top-full z-[60] mt-1 max-h-80 overflow-auto rounded-lg border border-outline/60 bg-surface-lowest p-1 shadow-2xl outline-none ${
               wideMenu
-                ? "w-max min-w-full max-w-[min(92vw,40rem)]"
+                ? "w-max min-w-[18rem] max-w-[min(92vw,28rem)]"
                 : "w-full"
             }`}
           >

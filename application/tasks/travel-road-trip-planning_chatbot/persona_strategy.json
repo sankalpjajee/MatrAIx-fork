@@ -13,11 +13,18 @@
     "intent": [
       "Get task done",
       "Decide"
+    ],
+    "lstyle_travel_freq": [
+      "Frequent flyer",
+      "A few trips/yr",
+      "Occasional",
+      "Rare",
+      "Homebody"
     ]
   },
   "sampleSizePerValueGroup": 1,
   "stratifyFields": [
-    "travel_frequency",
+    "lstyle_travel_freq",
     "age_bracket"
   ]
 }

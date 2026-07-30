@@ -12,6 +12,12 @@
     ],
     "intent": [
       "Get task done"
+    ],
+    "economic_motivation": [
+      "Cost-sensitive",
+      "Value-driven",
+      "Premium-seeking",
+      "Indifferent"
     ]
   },
   "sampleSizePerValueGroup": 1,

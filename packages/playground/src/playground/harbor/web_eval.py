@@ -24,6 +24,7 @@ from playground.harbor.playground import (
     write_harbor_persona_yaml,
 )
 from playground.types import DEFAULT_PERSONA_MODEL, Persona
+from matraix.persona_agent_context import apply_persona_context_to_agent_spec
 
 _JSON_FENCE_RE = re.compile(r"```(?:json)?\s*(\{.*?\})\s*```", re.DOTALL)
 
@@ -498,13 +499,15 @@ class HarborWebEvalRunner:
                 "force_build": _env_bool("MATRIX_HARBOR_FORCE_BUILD", False),
             },
             "agents": [
-                {
-                    "name": "persona-computer-1",
-                    "model_name": config.persona_model or harbor_persona_model(),
-                    "kwargs": {
-                        "persona_path": str(persona_path),
-                    },
-                }
+                apply_persona_context_to_agent_spec(
+                    {
+                        "name": "persona-computer-1",
+                        "model_name": config.persona_model or harbor_persona_model(),
+                        "kwargs": {
+                            "persona_path": str(persona_path),
+                        },
+                    }
+                )
             ],
             "tasks": [{"path": str(task_path)}],
             "extra_instruction_paths": [str(task_prompt_path)],

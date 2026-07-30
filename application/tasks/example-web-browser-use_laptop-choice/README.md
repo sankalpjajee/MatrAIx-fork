@@ -16,14 +16,14 @@ See [Application Tasks](../README.md) for contribution guidance.
 |-------|-------|
 | Agent | `persona-browser-use` |
 | Environment | `docker` (`network_mode = "public"`) |
-| Persona | `persona/datasets/bench-dev-sample/persona_0042.yaml` |
+| Persona | `persona/datasets/matraix-persona-dev-sample/persona_0042.yaml` |
 | API key | `ANTHROPIC_API_KEY` or `LLM_API_KEY` |
 
 ```bash
 uv run harbor run \
   -a persona-browser-use \
   -m anthropic/claude-sonnet-4-6 \
-  --ak persona_path=persona/datasets/bench-dev-sample/persona_0042.yaml \
+  --ak persona_path=persona/datasets/matraix-persona-dev-sample/persona_0042.yaml \
   -p application/tasks/example-web-browser-use_laptop-choice \
   --env-file .env
 ```

@@ -14,6 +14,13 @@
       "Vent / support",
       "Get task done",
       "Learn / explain"
+    ],
+    "health_health_literacy": [
+      "Very high",
+      "High",
+      "Moderate",
+      "Low",
+      "None"
     ]
   },
   "sampleSizePerValueGroup": 1,

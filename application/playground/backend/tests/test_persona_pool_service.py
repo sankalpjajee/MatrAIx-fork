@@ -11,7 +11,7 @@ from backend.service.persona_pool_service import PersonaPoolService
 
 
 def _write_pool(repo: Path) -> None:
-    pool = repo / "persona" / "datasets" / "bench-dev-sample"
+    pool = repo / "persona" / "datasets" / "matraix-persona-dev-sample"
     pool.mkdir(parents=True)
     (pool / "persona_0001.yaml").write_text(
         "persona_id: '0001'\nversion: '1.0'\nsource: Nemotron\ndimensions:\n  economic_motivation: Price-sensitive\n",
@@ -32,13 +32,13 @@ def _write_pool(repo: Path) -> None:
                 "personas": [
                     {
                         "persona_id": "0001",
-                        "path": "persona/datasets/bench-dev-sample/persona_0001.yaml",
+                        "path": "persona/datasets/matraix-persona-dev-sample/persona_0001.yaml",
                         "source": "Nemotron",
                         "dimensions": {"economic_motivation": "Price-sensitive"},
                     },
                     {
                         "persona_id": "0002",
-                        "path": "persona/datasets/bench-dev-sample/persona_0002.yaml",
+                        "path": "persona/datasets/matraix-persona-dev-sample/persona_0002.yaml",
                         "source": "OASIS",
                         "dimensions": {"economic_motivation": "Indifferent"},
                     },
@@ -77,6 +77,7 @@ def _write_pool(repo: Path) -> None:
                     {
                         "id": "economic_motivation",
                         "label": "Economic motivation",
+                        "category": "Values & Motivation",
                         "values": ["Price-sensitive", "Indifferent"],
                     }
                 ],
@@ -90,7 +91,7 @@ def test_list_persona_ids_from_yaml_filenames(tmp_path):
     repo = tmp_path
     _write_pool(repo)
     service = PersonaPoolService(repo_root=repo)
-    listed = service.list_persona_ids("persona/datasets/bench-dev-sample")
+    listed = service.list_persona_ids("persona/datasets/matraix-persona-dev-sample")
     assert listed["count"] == 2
     assert listed["personaIds"] == ["0001", "0002"]
 
@@ -115,19 +116,97 @@ def test_list_datasets_includes_default_and_extras(tmp_path):
         "{}",
         encoding="utf-8",
     )
+    prod_cohort = (
+        repo / "persona" / "datasets" / "matraix-persona-1m" / "cohorts" / "cohort-deadbeef"
+    )
+    prod_cohort.mkdir(parents=True)
+    (prod_cohort / "manifest.json").write_text(
+        json.dumps({"count": 4, "personas": []}),
+        encoding="utf-8",
+    )
     service = PersonaPoolService(repo_root=repo)
 
     listed = service.list_datasets()
     pools = [item["pool"] for item in listed]
-    assert pools[0] == "persona/datasets/bench-dev-sample"
+    assert pools[0] == "persona/datasets/matraix-persona-dev-sample"
     assert listed[0]["default"] is True
-    assert listed[0]["label"] == "bench-dev-sample"
+    assert listed[0]["label"] == "matraix-persona-dev-sample"
     assert "persona/datasets/bench-dev-extra" in pools
-    assert "persona/datasets/_generated/strategy-demo" in pools
+    # Legacy synthetic top-up pools are no longer listed.
+    assert "persona/datasets/_generated/strategy-demo" not in pools
     assert "persona/datasets/cohorts/ignore-me" not in pools
+    # Production sample caches must not appear as Dataset sources.
+    assert "persona/datasets/matraix-persona-1m/cohorts/cohort-deadbeef" not in pools
     by_pool = {item["pool"]: item for item in listed}
     assert by_pool["persona/datasets/bench-dev-extra"]["count"] == 1
-    assert by_pool["persona/datasets/_generated/strategy-demo"]["kind"] == "generated"
+    assert "persona/datasets/matraix-persona-1m" in by_pool
+    assert by_pool["persona/datasets/matraix-persona-1m"]["kind"] == "production"
+
+
+def test_save_pool_as_dataset(tmp_path):
+    repo = tmp_path
+    _write_pool(repo)
+    cohort = (
+        repo
+        / "persona"
+        / "datasets"
+        / "matraix-persona-1m"
+        / "cohorts"
+        / "cohort-abc123"
+    )
+    cohort.mkdir(parents=True)
+    (cohort / "persona_p1.yaml").write_text(
+        "persona_id: p1\nversion: '1.0'\nsource: Nemotron\ndimensions:\n  age_bracket: 25-34\n",
+        encoding="utf-8",
+    )
+    (cohort / "persona_p2.yaml").write_text(
+        "persona_id: p2\nversion: '1.0'\nsource: OASIS\ndimensions:\n  age_bracket: 35-44\n",
+        encoding="utf-8",
+    )
+    (cohort / "manifest.json").write_text(
+        json.dumps(
+            {
+                "kind": "matraix-persona-1m-cohort",
+                "parent_pool": "persona/datasets/matraix-persona-1m",
+                "count": 2,
+                "seed": 7,
+                "personas": [],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    service = PersonaPoolService(repo_root=repo)
+    saved = service.save_pool_as_dataset(
+        source_pool="persona/datasets/matraix-persona-1m/cohorts/cohort-abc123",
+        name="My Robinhood Cohort",
+    )
+    assert saved["pool"] == "persona/datasets/my-robinhood-cohort"
+    assert saved["count"] == 2
+    dest = repo / "persona/datasets/my-robinhood-cohort"
+    assert (dest / "persona_p1.yaml").is_file()
+    manifest = json.loads((dest / "manifest.json").read_text(encoding="utf-8"))
+    assert manifest["kind"] == "saved-persona-dataset"
+    assert manifest["count"] == 2
+    assert manifest["personas"][0]["path"].startswith(
+        "persona/datasets/my-robinhood-cohort/"
+    )
+
+    listed = {item["pool"] for item in service.list_datasets()}
+    assert "persona/datasets/my-robinhood-cohort" in listed
+
+    with pytest.raises(FileExistsError):
+        service.save_pool_as_dataset(
+            source_pool="persona/datasets/matraix-persona-1m/cohorts/cohort-abc123",
+            name="My Robinhood Cohort",
+        )
+
+    again = service.save_pool_as_dataset(
+        source_pool="persona/datasets/matraix-persona-1m/cohorts/cohort-abc123",
+        name="My Robinhood Cohort",
+        overwrite=True,
+    )
+    assert again["pool"] == "persona/datasets/my-robinhood-cohort"
 
 
 def test_save_list_and_resolve_cohort(tmp_path, monkeypatch):
@@ -220,29 +299,19 @@ def test_get_catalog_and_sample_with_filters(tmp_path, monkeypatch):
     assert set(stratified["personaIds"]) == {"0001", "0002"}
     assert stratified["stratifyFields"] == ["economic_motivation"]
 
-    with pytest.raises(ValueError, match="generate_dev_personas.py --strategy") as excinfo:
+    with pytest.raises(ValueError, match="matraix-persona-1m") as excinfo:
         service.sample_pool(
             sample_size=99,
             seed=7,
             task_path="application/tasks/example-survey_product-feedback",
-            auto_ensure_strategy_pool=False,
         )
-    assert "example-survey_product-feedback/persona_strategy.json" in str(excinfo.value)
-
-    # Without filters, auto-ensure cannot invent coverage either.
-    with pytest.raises(ValueError, match="generate_dev_personas.py --strategy"):
-        service.sample_pool(
-            sample_size=99,
-            seed=7,
-            task_path="application/tasks/example-survey_product-feedback",
-            auto_ensure_strategy_pool=True,
-        )
+    assert "exceeds matched pool size" in str(excinfo.value)
 
 
 def test_sample_pool_per_value_group_not_truncated_by_sample_size(tmp_path, monkeypatch):
     """sampleSizePerValueGroup is primary; sample_size must not clip N×cells."""
     repo = tmp_path
-    pool = repo / "persona" / "datasets" / "bench-dev-sample"
+    pool = repo / "persona" / "datasets" / "matraix-persona-dev-sample"
     pool.mkdir(parents=True)
     personas = [
         ("0001", "Nemotron", "Price-sensitive"),
@@ -260,7 +329,7 @@ def test_sample_pool_per_value_group_not_truncated_by_sample_size(tmp_path, monk
         manifest_rows.append(
             {
                 "persona_id": pid,
-                "path": f"persona/datasets/bench-dev-sample/persona_{pid}.yaml",
+                "path": f"persona/datasets/matraix-persona-dev-sample/persona_{pid}.yaml",
                 "source": source,
                 "dimensions": {"economic_motivation": motivation},
             }
@@ -335,7 +404,7 @@ def test_sample_pool_per_value_group_not_truncated_by_sample_size(tmp_path, monk
 def test_sample_pool_stratified_without_per_cell_caps_at_sample_size(tmp_path, monkeypatch):
     """sampleSize-only stratified: spread ceil(N/cells) then clip to sampleSize."""
     repo = tmp_path
-    pool = repo / "persona" / "datasets" / "bench-dev-sample"
+    pool = repo / "persona" / "datasets" / "matraix-persona-dev-sample"
     pool.mkdir(parents=True)
     # 3 strata × 3 people so ceil(8/3)=3 per cell fits, then clip to 8.
     personas = [
@@ -359,7 +428,7 @@ def test_sample_pool_stratified_without_per_cell_caps_at_sample_size(tmp_path, m
         manifest_rows.append(
             {
                 "persona_id": pid,
-                "path": f"persona/datasets/bench-dev-sample/persona_{pid}.yaml",
+                "path": f"persona/datasets/matraix-persona-dev-sample/persona_{pid}.yaml",
                 "source": source,
                 "dimensions": {"age_bracket": age},
             }
@@ -417,7 +486,6 @@ def test_sample_pool_stratified_without_per_cell_caps_at_sample_size(tmp_path, m
         dimension_filters={"age_bracket": ["18-24", "25-34", "35-44"]},
         stratify_fields=["age_bracket"],
         sample_size_per_value_group=None,
-        auto_ensure_strategy_pool=False,
     )
     assert result["matchedCount"] == 9
     assert result["sampleSize"] == 8
@@ -439,15 +507,14 @@ def test_sample_pool_rejects_sample_size_below_cell_count(tmp_path, monkeypatch)
             dimension_filters={"economic_motivation": ["Price-sensitive", "Indifferent"]},
             stratify_fields=["economic_motivation"],
             sample_size_per_value_group=None,
-            auto_ensure_strategy_pool=False,
         )
         raise AssertionError("expected sampleSize below cell count to fail")
     except ValueError as exc:
         assert "below the stratified cell count=2" in str(exc)
 
 
-def test_sample_pool_auto_ensures_strategy_coverage(tmp_path, monkeypatch):
-    """When filters undershoot the fixture, sample_pool synthesizes a local pool."""
+def test_sample_pool_fails_when_filter_coverage_is_thin(tmp_path, monkeypatch):
+    """Thin fixture coverage fails with a 1M / widen / cohort hint — no synthetic top-up."""
     repo = tmp_path
     _write_pool(repo)
     monkeypatch.setattr(
@@ -456,35 +523,18 @@ def test_sample_pool_auto_ensures_strategy_coverage(tmp_path, monkeypatch):
     )
     service = PersonaPoolService(repo_root=repo)
 
-    # Only one Price-sensitive persona in the fixture — ask for more than that.
-    sampled = service.sample_pool(
-        sample_size=4,
-        seed=7,
-        dimension_filters={"economic_motivation": ["Price-sensitive"]},
-        task_path="application/tasks/example-survey_product-feedback",
-        auto_ensure_strategy_pool=True,
-    )
-    assert sampled["poolEnsured"] is True
-    assert sampled["sampleSize"] == 4
-    assert len(sampled["personaIds"]) == 4
-    assert str(sampled["pool"]).startswith("persona/datasets/_generated/")
-    assert (repo / sampled["pool"] / "manifest.json").is_file()
-
-    # Second call should reuse the generated pool when it already covers the request.
-    reused = service.sample_pool(
-        sample_size=4,
-        seed=7,
-        dimension_filters={"economic_motivation": ["Price-sensitive"]},
-        task_path="application/tasks/example-survey_product-feedback",
-        auto_ensure_strategy_pool=True,
-    )
-    assert reused["poolEnsured"] is True
-    assert reused["poolReused"] is True
-    assert reused["pool"] == sampled["pool"]
+    with pytest.raises(ValueError, match="matraix-persona-1m") as excinfo:
+        service.sample_pool(
+            sample_size=4,
+            seed=7,
+            dimension_filters={"economic_motivation": ["Price-sensitive"]},
+            task_path="application/tasks/example-survey_product-feedback",
+        )
+    assert "poolEnsured" not in str(excinfo.value)
 
 
-def test_sample_pool_auto_ensures_incomplete_stratify_cells(tmp_path, monkeypatch):
-    """Missing stratify cells synthesize a local pool instead of returning a partial cohort."""
+def test_sample_pool_fails_on_incomplete_stratify_cells(tmp_path, monkeypatch):
+    """Missing stratify cells raise instead of synthesizing a local pool."""
     repo = tmp_path
     _write_pool(repo)
     monkeypatch.setattr(
@@ -493,22 +543,15 @@ def test_sample_pool_auto_ensures_incomplete_stratify_cells(tmp_path, monkeypatc
     )
     service = PersonaPoolService(repo_root=repo)
 
-    # Fixture only has Price-sensitive + Indifferent once each, but asking for
-    # N=2 per cell must top up — and requesting both values in filters makes
-    # empty/thin cells detectable before silent partial return.
-    sampled = service.sample_pool(
-        sample_size=4,
-        seed=7,
-        dimension_filters={"economic_motivation": ["Price-sensitive", "Indifferent"]},
-        stratify_fields=["economic_motivation"],
-        sample_size_per_value_group=2,
-        task_path="application/tasks/example-survey_product-feedback",
-        auto_ensure_strategy_pool=True,
-    )
-    assert sampled["poolEnsured"] is True
-    assert sampled["sampleSize"] == 4
-    assert len(sampled["personaIds"]) == 4
-    assert str(sampled["pool"]).startswith("persona/datasets/_generated/")
+    with pytest.raises(ValueError, match="Incomplete stratify coverage|matraix-persona-1m"):
+        service.sample_pool(
+            sample_size=4,
+            seed=7,
+            dimension_filters={"economic_motivation": ["Price-sensitive", "Indifferent"]},
+            stratify_fields=["economic_motivation"],
+            sample_size_per_value_group=2,
+            task_path="application/tasks/example-survey_product-feedback",
+        )
 
 
 def test_list_persona_cards_all_personas(tmp_path, monkeypatch):

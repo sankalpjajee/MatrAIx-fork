@@ -111,6 +111,51 @@ class AttributeCodec:
                 values[field_id] = field.get("value")
         return self.encode_mapping(values)
 
+    def decode_row(
+        self,
+        attributes: bytes | memoryview,
+        null_bitmap: bytes | memoryview | None = None,
+        overrides: list[dict[str, Any]] | None = None,
+    ) -> dict[str, str]:
+        """Decode one packed attributes blob into ``{field_id: label}``."""
+        packed = np.frombuffer(memoryview(attributes), dtype=np.uint8)
+        if packed.size < ATTRIBUTE_BYTES:
+            raise ValueError(
+                f"attributes width {packed.size} < expected {ATTRIBUTE_BYTES}"
+            )
+        codes = np.empty(ATTRIBUTE_COUNT, dtype=np.uint8)
+        codes[0::2] = packed[: ATTRIBUTE_BYTES] & 0x0F
+        codes[1::2] = (packed[: (ATTRIBUTE_COUNT // 2)] >> 4) & 0x0F
+
+        nulls = np.zeros(ATTRIBUTE_COUNT, dtype=np.uint8)
+        if null_bitmap is not None:
+            bits = np.frombuffer(memoryview(null_bitmap), dtype=np.uint8)
+            unpacked = np.unpackbits(bits, bitorder="little")
+            nulls[: min(ATTRIBUTE_COUNT, unpacked.size)] = unpacked[:ATTRIBUTE_COUNT]
+
+        out: dict[str, str] = {}
+        for index, field_id in enumerate(self.field_ids):
+            if nulls[index]:
+                continue
+            code = int(codes[index])
+            value_map = self.value_codes[index]
+            label = next((name for name, idx in value_map.items() if idx == code), None)
+            if label is not None:
+                out[field_id] = label
+
+        for override in overrides or ():
+            try:
+                field_index = int(override["field_index"])
+            except (KeyError, TypeError, ValueError):
+                continue
+            if not (0 <= field_index < ATTRIBUTE_COUNT):
+                continue
+            value = override.get("value")
+            if value is None:
+                continue
+            out[self.field_ids[field_index]] = str(value)
+        return out
+
 
 def fixed_binary_array(matrix: np.ndarray, width: int) -> pa.Array:
     contiguous = np.ascontiguousarray(matrix, dtype=np.uint8)

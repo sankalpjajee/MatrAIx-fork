@@ -28,7 +28,7 @@ Playground separates **what to simulate** from **how to execute it**:
 
 | Layer | Path | Responsibility |
 |-------|------|------------------|
-| Persona input | `persona/datasets/bench-dev-sample/` | *Who* the simulated user is |
+| Persona input | `persona/datasets/matraix-persona-dev-sample/` | *Who* the simulated user is |
 | Task definition | `application/tasks/<name>/` | *What* they do (`instruction.md`, verifier, `reporting.json`) |
 | Task environment | `environment/task-environments/application/` | Docker images, sidecars, browser stacks |
 | Runtime | `environment/runtime/harbor/` | Job/trial loop, backends (host, docker, use-computer, …) |

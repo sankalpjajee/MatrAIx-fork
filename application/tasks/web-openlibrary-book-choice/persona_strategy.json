@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0",
-  "pool": "persona/datasets/bench-dev-sample",
+  "pool": "persona/datasets/matraix-persona-dev-sample",
   "sources": [],
   "defaultMode": "stratified",
   "dimensionFilters": {

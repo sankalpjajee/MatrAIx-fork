@@ -12,11 +12,18 @@
     ],
     "intent": [
       "Get task done"
+    ],
+    "val_beauty_aesthetics": [
+      "Core value",
+      "Important",
+      "Moderate",
+      "Minor",
+      "Irrelevant"
     ]
   },
   "sampleSizePerValueGroup": 1,
   "stratifyFields": [
-    "lstyle_beauty_routine",
+    "val_beauty_aesthetics",
     "age_bracket"
   ]
 }

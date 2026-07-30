@@ -12,11 +12,19 @@
     ],
     "intent": [
       "Get task done"
+    ],
+    "demo_housing_status": [
+      "Own outright",
+      "Mortgage",
+      "Renting",
+      "Living with family",
+      "Shared housing",
+      "Temporary / transitional"
     ]
   },
   "sampleSizePerValueGroup": 1,
   "stratifyFields": [
-    "home_ownership",
+    "demo_housing_status",
     "age_bracket"
   ]
 }

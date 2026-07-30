@@ -966,7 +966,7 @@ class HarborJobService:
         task_path: str,
         sample_size: int = 1,
         seed: int = 42,
-        persona_pool: str = "persona/datasets/bench-dev-sample",
+        persona_pool: str = "persona/datasets/matraix-persona-dev-sample",
         persona_ids: list[str] | None = None,
         agent_name: str | None = None,
         persona_model: str | None = None,
@@ -1039,7 +1039,6 @@ class HarborJobService:
                 sources=resolved_sources,
                 dimension_filters=resolved_filters,
                 task_path=task_path,
-                auto_ensure_strategy_pool=True,
             )
             resolved_persona_ids = list(sampled["personaIds"])
             resolved_pool = str(sampled.get("pool") or resolved_pool)
@@ -1095,6 +1094,14 @@ class HarborJobService:
 
         resolved_task_path = resolve_harbor_task_path(harbor_task_path, trial_profile=trial_profile)
         job_config = build_application_job_config(spec, repo_root=self.repo_root)
+        from matraix.persona_agent_context import apply_persona_context_to_agent_spec
+
+        for agent_cfg in job_config.get("agents", []):
+            if isinstance(agent_cfg, dict):
+                apply_persona_context_to_agent_spec(
+                    agent_cfg,
+                    model_name=str(agent_cfg.get("model_name") or model),
+                )
         if os_app_submission_profile:
             for agent in job_config.get("agents", []):
                 if isinstance(agent, dict):

@@ -34,14 +34,14 @@ Change `[ios]` in `task.toml` if your reserved mini uses different simulator run
 |-------|-------|
 | Agent | `persona-computer-1` |
 | Environment | `use-computer` + `platform: ios` |
-| Persona | `persona/datasets/bench-dev-sample/persona_0042.yaml` |
+| Persona | `persona/datasets/matraix-persona-dev-sample/persona_0042.yaml` |
 | Agent kwargs | `max_steps: 45`, `recording_enabled: false` (job config) |
 
 ```bash
 uv run harbor run \
   -a persona-computer-1 \
   -m anthropic/claude-sonnet-4-6 \
-  --ak persona_path=persona/datasets/bench-dev-sample/persona_0042.yaml \
+  --ak persona_path=persona/datasets/matraix-persona-dev-sample/persona_0042.yaml \
   -p application/tasks/os-app-ios_news-subscription-decision \
   -e use-computer \
   --ek platform=ios

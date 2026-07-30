@@ -12,11 +12,18 @@
     ],
     "intent": [
       "Get task done"
+    ],
+    "lstyle_exercise_freq": [
+      "Daily",
+      "Weekly",
+      "Monthly",
+      "Rarely",
+      "Never"
     ]
   },
   "sampleSizePerValueGroup": 1,
   "stratifyFields": [
-    "sports_participation",
+    "lstyle_exercise_freq",
     "age_bracket"
   ]
 }

@@ -1,7 +1,6 @@
 """FastAPI server for Texas Hold'em heads-up game."""
 from __future__ import annotations
 
-from pathlib import Path
 from typing import Optional
 
 from fastapi import FastAPI, HTTPException

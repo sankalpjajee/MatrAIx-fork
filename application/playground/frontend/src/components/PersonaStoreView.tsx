@@ -1,23 +1,20 @@
 import { PersonaStoreContent } from "./PersonaStoreContent";
 import { StudioMeshShell, StudioPageFrame, StudioPageHeader } from "./studio/StudioShell";
 
-import type { PersonaPoolPersonaCard } from "@/lib/types";
-
 export interface PersonaStoreViewProps {
-  selectedId?: string | null;
-  onSelect?: (persona: PersonaPoolPersonaCard) => void;
+  onOpenInPlayground?: (input: { pool: string; personaIds: string[] }) => void;
 }
 
-export function PersonaStoreView({ selectedId, onSelect }: PersonaStoreViewProps) {
+export function PersonaStoreView({ onOpenInPlayground }: PersonaStoreViewProps) {
   return (
     <StudioMeshShell>
       <StudioPageFrame>
         <StudioPageHeader
           eyebrow="MatrAIx · Persona World"
           title="Browse personas"
-          subtitle="bench-dev-sample pool — search by dimension values, source, or persona id."
+          subtitle="Click a Matches chip to select that whole group, then Open in Playground."
         />
-        <PersonaStoreContent selectedId={selectedId} onSelect={onSelect} autoFocusSearch />
+        <PersonaStoreContent onOpenInPlayground={onOpenInPlayground} autoFocusSearch />
       </StudioPageFrame>
     </StudioMeshShell>
   );

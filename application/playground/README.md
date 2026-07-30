@@ -12,7 +12,7 @@ Included in this clean tree:
 - React/Vite frontend under `frontend/`.
 - FastAPI backend and service layer under `backend/`.
 - Persona simulator package under `packages/playground/src/playground/`.
-- Persona catalog sourced from `persona/datasets/bench-dev-sample/`.
+- Persona catalog sourced from `persona/datasets/matraix-persona-dev-sample/`.
 - Survey, chatbot, and web evaluation APIs.
 
 Preserved from the earlier clean MatrAIx main:
@@ -189,7 +189,7 @@ packages/playground/src/playground/
 Canonical local persona source:
 
 ```text
-persona/datasets/bench-dev-sample/
+persona/datasets/matraix-persona-dev-sample/
 ```
 
 Related application tasks live outside this app directory:

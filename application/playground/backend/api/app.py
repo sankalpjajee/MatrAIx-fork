@@ -1061,8 +1061,31 @@ def create_app(catalog_path: Optional[str] = None) -> FastAPI:
     ) -> Dict[str, Any]:
         return {
             "datasets": services.persona_pool.list_datasets(),
-            "defaultPool": "persona/datasets/bench-dev-sample",
+            "defaultPool": "persona/datasets/matraix-persona-dev-sample",
         }
+
+    @app.post(
+        "/api/persona-pool/datasets",
+        response_model=schemas.PersonaDatasetSaveResponse,
+        tags=["persona-pool"],
+    )
+    def save_persona_dataset(
+        body: schemas.PersonaDatasetSaveRequest,
+        services: AppState = Depends(get_services),
+    ) -> Dict[str, Any]:
+        try:
+            return services.persona_pool.save_pool_as_dataset(
+                source_pool=body.sourcePool,
+                name=body.name,
+                description=body.description,
+                overwrite=body.overwrite,
+            )
+        except FileExistsError as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+        except FileNotFoundError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     @app.get(
         "/api/persona-pool/ids",
@@ -1070,7 +1093,7 @@ def create_app(catalog_path: Optional[str] = None) -> FastAPI:
         tags=["persona-pool"],
     )
     def list_persona_pool_ids(
-        pool: str = Query(default="persona/datasets/bench-dev-sample"),
+        pool: str = Query(default="persona/datasets/matraix-persona-dev-sample"),
         services: AppState = Depends(get_services),
     ) -> Dict[str, Any]:
         try:
@@ -1084,13 +1107,31 @@ def create_app(catalog_path: Optional[str] = None) -> FastAPI:
         tags=["persona-pool"],
     )
     def get_persona_pool_catalog(
-        pool: str = Query(default="persona/datasets/bench-dev-sample"),
+        pool: str = Query(default="persona/datasets/matraix-persona-dev-sample"),
         services: AppState = Depends(get_services),
     ) -> Dict[str, Any]:
         try:
             return services.persona_pool.get_catalog(pool)
         except (ValueError, FileNotFoundError, OSError) as exc:
             raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+    @app.post(
+        "/api/persona-pool/match-attributes",
+        response_model=schemas.PersonaMatchAttributesResponse,
+        tags=["persona-pool"],
+    )
+    def match_persona_pool_attributes(
+        body: schemas.PersonaMatchAttributesRequest,
+        services: AppState = Depends(get_services),
+    ) -> Dict[str, Any]:
+        """Map a free-text phrase to selectable persona attributes (Treiver)."""
+        try:
+            return services.persona_pool.match_attributes(
+                body.prompt,
+                use_llm=body.useLlm,
+            )
+        except Exception as exc:  # noqa: BLE001 — surface matcher failures cleanly
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
 
     @app.post(
         "/api/persona-pool/sample",
@@ -1111,7 +1152,6 @@ def create_app(catalog_path: Optional[str] = None) -> FastAPI:
                 stratify_fields=body.stratifyFields,
                 sample_size_per_value_group=body.sampleSizePerValueGroup,
                 task_path=body.taskPath,
-                auto_ensure_strategy_pool=body.autoEnsureStrategyPool,
             )
         except ValueError as exc:
             raise HTTPException(status_code=422, detail=str(exc)) from exc
@@ -1121,7 +1161,7 @@ def create_app(catalog_path: Optional[str] = None) -> FastAPI:
         tags=["persona-pool"],
     )
     def list_persona_pool_cards(
-        pool: str = Query(default="persona/datasets/bench-dev-sample"),
+        pool: str = Query(default="persona/datasets/matraix-persona-dev-sample"),
         limit: int = Query(default=10, ge=1, le=500),
         offset: int = Query(default=0, ge=0),
         seed: int = Query(default=42),
@@ -1152,7 +1192,7 @@ def create_app(catalog_path: Optional[str] = None) -> FastAPI:
     )
     def get_persona_pool_persona(
         persona_id: str,
-        pool: str = Query(default="persona/datasets/bench-dev-sample"),
+        pool: str = Query(default="persona/datasets/matraix-persona-dev-sample"),
         services: AppState = Depends(get_services),
     ) -> Dict[str, Any]:
         try:

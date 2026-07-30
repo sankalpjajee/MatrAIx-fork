@@ -12,11 +12,18 @@
     ],
     "intent": [
       "Get task done"
+    ],
+    "skill_writing": [
+      "Master",
+      "Advanced",
+      "Intermediate",
+      "Beginner",
+      "None"
     ]
   },
   "sampleSizePerValueGroup": 1,
   "stratifyFields": [
-    "writing_experience",
+    "skill_writing",
     "age_bracket"
   ]
 }

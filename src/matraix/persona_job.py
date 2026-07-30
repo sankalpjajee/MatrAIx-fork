@@ -17,7 +17,7 @@ from matraix.task_catalog import (
     probe_dimension_from_grounding,
 )
 
-DEFAULT_DATASET = "persona/datasets/bench-dev-sample"
+DEFAULT_DATASET = "persona/datasets/matraix-persona-dev-sample"
 DEFAULT_STRATIFY_FIELDS = ["dimensions.economic_motivation"]
 SMOKE_PERSONA_ID = "0001"
 SMOKE_PERSONA_PATH = f"{DEFAULT_DATASET}/persona_{SMOKE_PERSONA_ID}.yaml"

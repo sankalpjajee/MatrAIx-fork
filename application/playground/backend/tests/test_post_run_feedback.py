@@ -38,7 +38,7 @@ def _write_trial(repo, *, task_path: str):
     output_dir = trial_dir / "artifacts" / "app" / "output"
     output_dir.mkdir(parents=True)
     (trial_dir / "agent").mkdir()
-    persona_rel = "persona/datasets/bench-dev-sample/persona_0001.yaml"
+    persona_rel = "persona/datasets/matraix-persona-dev-sample/persona_0001.yaml"
     persona_path = repo / persona_rel
     persona_path.parent.mkdir(parents=True, exist_ok=True)
     persona_path.write_text(

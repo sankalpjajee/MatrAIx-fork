@@ -6,7 +6,6 @@ Usage:
 
 from __future__ import annotations
 
-import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -14,7 +13,7 @@ from _repo_imports import ensure_application_script_imports
 
 ensure_application_script_imports()
 
-from backend.service.report_pdf import build_batch_report_pdf
+from backend.service.report_pdf import build_batch_report_pdf  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 TASKS_DIR = REPO_ROOT / "application" / "tasks"
@@ -73,12 +72,6 @@ def _collect_trials(tasks: list[dict]) -> list[dict]:
 
 
 def _collect_contexts(tasks: list[dict]) -> list[dict]:
-    outcome_statuses = ["resolved", "resolved", "resolved", "partially_resolved", "resolved"]
-    resolution_bases = ["information_provided", "action_taken", "information_provided", "escalation_needed", "action_taken"]
-    conv_paths = ["direct", "negotiation", "direct", "multi_step", "negotiation"]
-    need_satisfactions = ["yes", "yes", "partially", "yes", "no"]
-    clarifications = [True, True, False, True, True]
-
     domains_used = sorted({t["domain"] for t in tasks})
     task_outcome_facets = []
     conversation_summary_facets = []
@@ -86,7 +79,6 @@ def _collect_contexts(tasks: list[dict]) -> list[dict]:
     trial_summary_facets = []
 
     for domain in domains_used:
-        intent_list = DOMAIN_INTENTS.get(domain, ["Get task done"])
         count = sum(1 for t in tasks if t["domain"] == domain)
 
         task_outcome_facets.append({

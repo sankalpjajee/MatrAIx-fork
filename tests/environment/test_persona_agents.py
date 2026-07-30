@@ -68,11 +68,11 @@ def test_installed_runtime_packages_do_not_import_environment_namespace() -> Non
 def test_persona_loader_reads_sample_dataset() -> None:
     from matraix.agents.persona.loader import load_persona
 
-    persona = load_persona(ROOT / "persona/datasets/bench-dev-sample/persona_0001.yaml")
+    persona = load_persona(ROOT / "persona/datasets/matraix-persona-dev-sample/persona_0001.yaml")
 
     assert persona.schema_version == "v2"
     assert persona.persona_id == "0001"
-    assert persona.dimensions["domain"] == "Software & AI"
+    assert persona.dimensions["domain"] == "Skilled Trades"
 
 
 def test_resolve_desktop_cua_provider_from_model_and_backend() -> None:

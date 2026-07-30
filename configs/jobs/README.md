@@ -15,7 +15,7 @@ Rules for adding recipes:
 Current curated set:
 
 - `example-job-recipe/`: local application task examples backed by
-  `application/tasks/` and `persona/datasets/bench-dev-sample/`, plus
+  `application/tasks/` and `persona/datasets/matraix-persona-dev-sample/`, plus
   `harbor-smoke-local.yaml` for a no-API-key runtime smoke check.
 - `application-task-job-recipe/`: generated application job recipes from
   `application/scripts/generate_application_job.py` and Playground UI launches.

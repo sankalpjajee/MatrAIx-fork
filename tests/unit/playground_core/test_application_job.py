@@ -16,7 +16,7 @@ from matraix.application_job import (
 
 def test_resolve_persona_entries_from_pool(tmp_path: Path) -> None:
     repo = tmp_path
-    pool = repo / "persona" / "datasets" / "bench-dev-sample"
+    pool = repo / "persona" / "datasets" / "matraix-persona-dev-sample"
     pool.mkdir(parents=True)
     (pool / "persona_0042.yaml").write_text(
         "persona_id: '0042'\nversion: '1.0'\nsource: Nemotron\ndimensions: {}\n",
@@ -25,7 +25,7 @@ def test_resolve_persona_entries_from_pool(tmp_path: Path) -> None:
 
     chosen = resolve_persona_entries(
         ["42", "0042"],
-        persona_pool="persona/datasets/bench-dev-sample",
+        persona_pool="persona/datasets/matraix-persona-dev-sample",
         repo_root=repo,
     )
     assert len(chosen) == 1
@@ -34,7 +34,7 @@ def test_resolve_persona_entries_from_pool(tmp_path: Path) -> None:
 
 def test_resolve_persona_entries_accepts_persona_prefixed_ids(tmp_path: Path) -> None:
     repo = tmp_path
-    pool = repo / "persona" / "datasets" / "bench-dev-sample"
+    pool = repo / "persona" / "datasets" / "matraix-persona-dev-sample"
     pool.mkdir(parents=True)
     (pool / "persona_0042.yaml").write_text(
         "persona_id: '0042'\nversion: '1.0'\nsource: Nemotron\ndimensions: {}\n",
@@ -43,16 +43,16 @@ def test_resolve_persona_entries_accepts_persona_prefixed_ids(tmp_path: Path) ->
 
     chosen = resolve_persona_entries(
         ["persona_0042"],
-        persona_pool="persona/datasets/bench-dev-sample",
+        persona_pool="persona/datasets/matraix-persona-dev-sample",
         repo_root=repo,
     )
     assert len(chosen) == 1
-    assert chosen[0]["path"] == "persona/datasets/bench-dev-sample/persona_0042.yaml"
+    assert chosen[0]["path"] == "persona/datasets/matraix-persona-dev-sample/persona_0042.yaml"
 
 
 def test_build_application_job_config_with_explicit_persona_ids(tmp_path: Path) -> None:
     repo = tmp_path
-    pool = repo / "persona" / "datasets" / "bench-dev-sample"
+    pool = repo / "persona" / "datasets" / "matraix-persona-dev-sample"
     pool.mkdir(parents=True)
     (pool / "persona_0001.yaml").write_text(
         "persona_id: '0001'\nversion: '1.0'\nsource: Nemotron\ndimensions: {}\n",
@@ -63,7 +63,7 @@ def test_build_application_job_config_with_explicit_persona_ids(tmp_path: Path) 
         {
             "name": "explicit-job",
             "task": "application/tasks/example-survey_product-feedback",
-            "persona_pool": "persona/datasets/bench-dev-sample",
+            "persona_pool": "persona/datasets/matraix-persona-dev-sample",
             "persona_ids": ["0001"],
             "execution_mode": "auto",
             "trial_profile": "json_survey",
@@ -119,7 +119,7 @@ def test_resolve_job_environment_use_computer_for_macos_and_ios() -> None:
 
 def test_build_application_job_config_macos_cua_uses_use_computer(tmp_path: Path) -> None:
     repo = tmp_path
-    pool = repo / "persona" / "datasets" / "bench-dev-sample"
+    pool = repo / "persona" / "datasets" / "matraix-persona-dev-sample"
     pool.mkdir(parents=True)
     (pool / "persona_0001.yaml").write_text(
         "persona_id: '0001'\nversion: '1.0'\nsource: Nemotron\ndimensions: {}\n",
@@ -130,7 +130,7 @@ def test_build_application_job_config_macos_cua_uses_use_computer(tmp_path: Path
         {
             "name": "macos-cua",
             "task": "application/tasks/example-computer-use-macos_calendar-reminder-handoff",
-            "persona_pool": "persona/datasets/bench-dev-sample",
+            "persona_pool": "persona/datasets/matraix-persona-dev-sample",
             "persona_ids": ["0001"],
             "execution_mode": "auto",
             "trial_profile": "docker_agent",
@@ -147,7 +147,7 @@ def test_build_application_job_config_macos_cua_uses_use_computer(tmp_path: Path
 
 def test_build_application_job_config_auto_survey_uses_host_environment(tmp_path: Path) -> None:
     repo = tmp_path
-    pool = repo / "persona" / "datasets" / "bench-dev-sample"
+    pool = repo / "persona" / "datasets" / "matraix-persona-dev-sample"
     pool.mkdir(parents=True)
     (pool / "persona_0001.yaml").write_text(
         "persona_id: '0001'\nversion: '1.0'\nsource: Nemotron\ndimensions: {}\n",
@@ -158,7 +158,7 @@ def test_build_application_job_config_auto_survey_uses_host_environment(tmp_path
         {
             "name": "auto-survey",
             "task": "application/tasks/example-survey_product-feedback",
-            "persona_pool": "persona/datasets/bench-dev-sample",
+            "persona_pool": "persona/datasets/matraix-persona-dev-sample",
             "persona_ids": ["0001"],
             "execution_mode": "auto",
             "trial_profile": "json_survey",
@@ -179,7 +179,7 @@ def test_build_application_job_config_auto_survey_uses_host_environment(tmp_path
 
 def test_build_application_job_config_rejects_unknown_mode(tmp_path: Path) -> None:
     repo = tmp_path
-    pool = repo / "persona" / "datasets" / "bench-dev-sample"
+    pool = repo / "persona" / "datasets" / "matraix-persona-dev-sample"
     pool.mkdir(parents=True)
     (pool / "persona_0001.yaml").write_text(
         "persona_id: '0001'\nversion: '1.0'\nsource: Nemotron\ndimensions: {}\n",
@@ -191,7 +191,7 @@ def test_build_application_job_config_rejects_unknown_mode(tmp_path: Path) -> No
             {
                 "name": "bad-mode",
                 "task": "application/tasks/example-survey_product-feedback",
-                "persona_pool": "persona/datasets/bench-dev-sample",
+                "persona_pool": "persona/datasets/matraix-persona-dev-sample",
                 "sample_size": 1,
                 "execution_mode": "turbo",
                 "agent": {"name": "persona-claude-code", "model_name": "anthropic/claude-haiku-4-5"},

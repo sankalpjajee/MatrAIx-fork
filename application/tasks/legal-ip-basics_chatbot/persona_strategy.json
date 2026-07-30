@@ -14,11 +14,17 @@
       "Get task done",
       "Vent / support",
       "Decide"
+    ],
+    "expertise_gap": [
+      "Novice asking expert",
+      "Peer-level",
+      "Expert testing the system",
+      "Teaching the model"
     ]
   },
   "sampleSizePerValueGroup": 1,
   "stratifyFields": [
-    "legal_knowledge",
+    "expertise_gap",
     "age_bracket"
   ]
 }

@@ -11,7 +11,7 @@ from matraix.persona_consistency import validate_dimensions
 from matraix.persona_generator import generate_persona_pool
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-MANIFEST = REPO_ROOT / "persona" / "datasets" / "bench-dev-sample" / "manifest.json"
+MANIFEST = REPO_ROOT / "persona" / "datasets" / "matraix-persona-dev-sample" / "manifest.json"
 
 
 def test_generate_dimensions_respects_fixed_life_stage_without_age() -> None:
@@ -200,34 +200,31 @@ def test_generate_pool_strategy_top_up_only() -> None:
 
 
 def test_checked_in_sample_manifest_is_consistent() -> None:
-    from matraix.persona_consistency import load_dev_dimension_ids
+    """The dev sample is a slice of matraix-persona-1m, not generator output.
 
-    food_dims = {
-        "lstyle_diet_type",
-        "health_dietary_restriction",
-        "habit_meal_prepping",
-        "habit_skipping_breakfast",
-        "habit_late_night_snacking",
-        "att_veganism",
-        "fam_nutrition",
-    }
+    Real personas carry a sparse subset of the catalog and legitimately break the
+    synthetic generator's coherence rules, so only catalog membership is checked.
+    """
+    from matraix.persona_generator import load_catalog_values
+
+    catalog_ids = set(load_catalog_values())
     manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
     assert manifest["count"] == len(manifest["personas"])
     assert manifest["count"] >= 2
     assert manifest.get("schema_version") == "1.0"
-    assert manifest.get("dimension_count") == 124
-    assert set(manifest["dimension_ids"]) == set(load_dev_dimension_ids())
-    assert food_dims <= set(manifest["dimension_ids"])
+    assert manifest.get("dimension_count") == len(manifest["dimension_ids"])
+    assert set(manifest["dimension_ids"]) == catalog_ids
+    assert str(manifest.get("parent_pool", "")).endswith("matraix-persona-1m")
+
+    sources = set(manifest["source_counts"])
+    assert sum(manifest["source_counts"].values()) == manifest["count"]
     for entry in manifest["personas"]:
         rel_path = entry if isinstance(entry, str) else entry["path"]
         if not isinstance(rel_path, str):
             rel_path = rel_path.split("/")[-1]
         yaml_path = MANIFEST.parent / Path(rel_path).name
         payload = yaml.safe_load(yaml_path.read_text(encoding="utf-8"))
-        assert validate_dimensions(payload["dimensions"]) == []
         assert payload.get("version") == "1.0"
-        assert payload.get("source") in {"Nemotron", "OASIS", "PersonaHub", "PRIMEX"}
-        assert len(payload["dimensions"]) == 124
-        assert food_dims <= set(payload["dimensions"])
-        if isinstance(entry, dict) and isinstance(entry.get("dimensions"), dict):
-            assert food_dims <= set(entry["dimensions"])
+        assert payload.get("source") in sources
+        assert payload["dimensions"]
+        assert set(payload["dimensions"]) <= catalog_ids

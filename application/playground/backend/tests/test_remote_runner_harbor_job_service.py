@@ -30,8 +30,8 @@ def test_launch_remote_plane_dispatches_harbor_job(tmp_path, monkeypatch) -> Non
     repo = tmp_path
     jobs_dir = repo / "jobs"
     jobs_dir.mkdir()
-    (repo / "persona" / "datasets" / "bench-dev-sample").mkdir(parents=True)
-    (repo / "persona" / "datasets" / "bench-dev-sample" / "persona_0001.yaml").write_text(
+    (repo / "persona" / "datasets" / "matraix-persona-dev-sample").mkdir(parents=True)
+    (repo / "persona" / "datasets" / "matraix-persona-dev-sample" / "persona_0001.yaml").write_text(
         "persona_id: '0001'\nversion: '1.0'\nsource: Nemotron\ndimensions: {}\n",
         encoding="utf-8",
     )
@@ -57,7 +57,7 @@ def test_launch_remote_plane_dispatches_harbor_job(tmp_path, monkeypatch) -> Non
     job_name = service.launch(
         task_path="application/tasks/example-survey_product-feedback",
         sample_size=1,
-        persona_pool="persona/datasets/bench-dev-sample",
+        persona_pool="persona/datasets/matraix-persona-dev-sample",
         persona_ids=["0001"],
         job_name="remote-survey-job",
         execution_plane="remote",

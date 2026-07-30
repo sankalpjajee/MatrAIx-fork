@@ -14,6 +14,8 @@ from pathlib import Path
 
 TEMPLATES = Path(__file__).resolve().parent.parent / "task_templates" / "chatbot"
 TASKS_DIR = Path(__file__).resolve().parent.parent.parent / "tasks"
+REPO_ROOT = Path(__file__).resolve().parents[3]
+DIMENSION_CATALOG = REPO_ROOT / "persona" / "schema" / "dimensions.json"
 
 REQUIRED_FIELDS = [
     "name",
@@ -101,34 +103,80 @@ def _default_dimension_filters(domain: str) -> dict:
 
 
 def _default_stratify_fields(domain: str) -> list[str]:
-    """Return domain-appropriate stratify fields for persona insights."""
+    """Return domain-appropriate stratify fields for persona insights.
+
+    Every id here must exist in persona/schema/dimensions.json — Playground
+    filters and the CI cohort gate both resolve axes against that catalog.
+    """
     domain = domain.lower()
     domain_fields = {
         "education": ["highest_education", "age_bracket"],
         "healthcare": ["health_health_literacy", "age_bracket"],
         "finance": ["risk_tolerance", "economic_motivation"],
-        "legal": ["legal_knowledge", "age_bracket"],
-        "career": ["work_experience", "education_level"],
+        "legal": ["expertise_gap", "age_bracket"],
+        "career": ["years_experience", "highest_education"],
         "technology": ["tech_savviness", "age_bracket"],
         "insurance": ["risk_tolerance", "age_bracket"],
-        "travel": ["travel_frequency", "age_bracket"],
+        "travel": ["lstyle_travel_freq", "age_bracket"],
         "real-estate": ["economic_motivation", "age_bracket"],
         "telecom": ["tech_savviness", "age_bracket"],
-        "customer-support": ["patience_level", "age_bracket"],
+        "customer-support": ["cog_patience", "age_bracket"],
         "automotive": ["economic_motivation", "age_bracket"],
-        "beauty": ["lstyle_beauty_routine", "age_bracket"],
+        "beauty": ["val_beauty_aesthetics", "age_bracket"],
         "food": ["lstyle_diet_type", "age_bracket"],
-        "fitness": ["fitness_level", "age_bracket"],
-        "gaming": ["gaming_frequency", "age_bracket"],
-        "home-services": ["home_ownership", "age_bracket"],
-        "parenting": ["parenting_stage", "age_bracket"],
-        "pet": ["pet_ownership_experience", "age_bracket"],
-        "photography": ["photography_experience", "age_bracket"],
-        "sports": ["sports_participation", "age_bracket"],
-        "sustainability": ["environmental_engagement", "age_bracket"],
-        "writing": ["writing_experience", "age_bracket"],
+        "fitness": ["health_fitness_level", "age_bracket"],
+        "gaming": ["lstyle_gaming_freq", "age_bracket"],
+        "home-services": ["demo_housing_status", "age_bracket"],
+        "parenting": ["demo_parental_status", "age_bracket"],
+        "pet": ["lstyle_pet_ownership", "age_bracket"],
+        "photography": ["skill_photography", "age_bracket"],
+        "sports": ["lstyle_exercise_freq", "age_bracket"],
+        "sustainability": ["val_sustainability", "age_bracket"],
+        "writing": ["skill_writing", "age_bracket"],
     }
     return domain_fields.get(domain, ["age_bracket"])
+
+
+def _catalog_values() -> dict[str, list[str]]:
+    """Map dimension id -> allowed values from the persona schema catalog."""
+    payload = json.loads(DIMENSION_CATALOG.read_text(encoding="utf-8"))
+    values: dict[str, list[str]] = {}
+
+    def walk(node):
+        if isinstance(node, dict):
+            dim_id = node.get("id")
+            allowed = node.get("values")
+            if isinstance(dim_id, str) and isinstance(allowed, list):
+                values[dim_id] = [str(v) for v in allowed]
+            for child in node.values():
+                walk(child)
+        elif isinstance(node, list):
+            for child in node:
+                walk(child)
+
+    walk(payload)
+    return values
+
+
+def _backfill_stratify_filters(strategy: dict) -> None:
+    """Give every stratify axis allowed values in dimensionFilters.
+
+    Stratified sampling can only guarantee cell coverage when each axis
+    declares its value domain, so the CI cohort gate rejects axes that are
+    missing from dimensionFilters.
+    """
+    filters = strategy.setdefault("dimensionFilters", {})
+    catalog = _catalog_values()
+    for field in strategy.get("stratifyFields") or []:
+        if filters.get(field):
+            continue
+        allowed = catalog.get(field)
+        if not allowed:
+            raise SystemExit(
+                f"stratify axis {field!r} is not in {DIMENSION_CATALOG}; "
+                "use a catalog dimension id"
+            )
+        filters[field] = allowed
 
 
 def _build_persona_strategy(row: dict) -> dict:
@@ -155,6 +203,7 @@ def _build_persona_strategy(row: dict) -> dict:
             strategy["sampleSize"] = int(sample_size_text)
         except ValueError:
             pass
+    _backfill_stratify_filters(strategy)
     return strategy
 
 

@@ -711,7 +711,7 @@ class HarborJobLaunchRequest(BaseModel):
     taskPath: str
     sampleSize: int = 1
     seed: int = 42
-    personaPool: str = "persona/datasets/bench-dev-sample"
+    personaPool: str = "persona/datasets/matraix-persona-dev-sample"
     personaIds: Optional[List[str]] = None
     personaSources: Optional[List[str]] = None
     personaFilters: Optional[Dict[str, str]] = None
@@ -844,6 +844,32 @@ class PersonaPoolCatalogResponse(BaseModel):
     dimensionCategories: Dict[str, Any] = Field(default_factory=dict)
 
 
+class PersonaMatchAttributesRequest(BaseModel):
+    """Free-text / NL prompt → catalog attribute suggestions (Treiver)."""
+
+    prompt: str = ""
+    useLlm: bool = False
+
+
+class PersonaMatchedAttribute(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    dimensionId: str
+    label: str = ""
+    value: str
+    evidence: Optional[str] = None
+    method: str = "regex"
+    confidence: float = 0.0
+
+
+class PersonaMatchAttributesResponse(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    prompt: str = ""
+    attributes: List[PersonaMatchedAttribute] = Field(default_factory=list)
+    usedLlm: bool = False
+
+
 class PersonaDatasetOption(BaseModel):
     model_config = ConfigDict(extra="allow")
 
@@ -856,7 +882,27 @@ class PersonaDatasetOption(BaseModel):
 
 class PersonaDatasetListResponse(BaseModel):
     datasets: List[PersonaDatasetOption] = Field(default_factory=list)
-    defaultPool: str = "persona/datasets/bench-dev-sample"
+    defaultPool: str = "persona/datasets/matraix-persona-dev-sample"
+
+
+class PersonaDatasetSaveRequest(BaseModel):
+    """Promote a materialized pool (e.g. 1M cohort) to a named Dataset."""
+
+    sourcePool: str
+    name: str
+    description: Optional[str] = None
+    overwrite: bool = False
+
+
+class PersonaDatasetSaveResponse(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    pool: str
+    label: str
+    name: str
+    count: int
+    sourcePool: str
+    kind: str = "dataset"
 
 
 class PersonaPoolIdsResponse(BaseModel):
@@ -866,7 +912,7 @@ class PersonaPoolIdsResponse(BaseModel):
 
 
 class PersonaPoolSampleRequest(BaseModel):
-    pool: str = "persona/datasets/bench-dev-sample"
+    pool: str = "persona/datasets/matraix-persona-dev-sample"
     sampleSize: int = 4
     seed: int = 42
     sources: Optional[List[str]] = None
@@ -874,9 +920,7 @@ class PersonaPoolSampleRequest(BaseModel):
     stratifyFields: Optional[List[str]] = None
     sampleSizePerValueGroup: Optional[int] = None
     taskPath: Optional[str] = None
-    """Optional task path — used to tailor pool-coverage recovery / auto top-up."""
-    autoEnsureStrategyPool: bool = True
-    """When coverage fails, generate a local ``_generated`` filter pool and retry."""
+    """Optional task path — included in coverage error hints."""
 
 
 class PersonaPoolPersonaCard(BaseModel):
@@ -896,13 +940,35 @@ class PersonaPoolCardsResponse(BaseModel):
     personas: List[PersonaPoolPersonaCard] = Field(default_factory=list)
 
 
+class PersonaDimensionItem(BaseModel):
+    id: str
+    label: str
+    value: str
+    category: str = ""
+
+
+class PersonaDimensionSubgroup(BaseModel):
+    id: str
+    label: str
+    count: int = 0
+    items: List[PersonaDimensionItem] = Field(default_factory=list)
+
+
+class PersonaDimensionGroup(BaseModel):
+    id: str
+    label: str
+    count: int = 0
+    subgroups: List[PersonaDimensionSubgroup] = Field(default_factory=list)
+
+
 class PersonaPoolPersonaDetailResponse(PersonaPoolPersonaCard):
     model_config = ConfigDict(extra="allow")
 
     pool: str
+    path: Optional[str] = None
     yaml: str = ""
     profileMarkdown: str = ""
-
+    dimensionGroups: List[PersonaDimensionGroup] = Field(default_factory=list)
 
 class TaskPersonaStrategy(BaseModel):
     """Optional per-task Playground sampling defaults (``persona_strategy.json``)."""
@@ -954,15 +1020,13 @@ class PersonaPoolSampleResponse(BaseModel):
     seed: int
     personaIds: List[str]
     personas: List[Dict[str, Any]] = Field(default_factory=list)
-    poolEnsured: bool = False
-    poolReused: bool = False
 
 
 class PersonaCohortSaveRequest(BaseModel):
     cohortId: str
     name: Optional[str] = None
     description: Optional[str] = None
-    pool: str = "persona/datasets/bench-dev-sample"
+    pool: str = "persona/datasets/matraix-persona-dev-sample"
     kind: str = "recipe"
     seed: int = 42
     sampleSize: int = 4

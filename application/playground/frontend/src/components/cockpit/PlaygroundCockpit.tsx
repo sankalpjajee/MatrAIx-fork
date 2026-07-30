@@ -327,7 +327,7 @@ function ChatbotEvalCockpit({
     taskPersonaStrategy,
     useTaskDefaultStrategy,
     setUseTaskDefaultStrategy,
-  } = useSetupPersonaSampling(options, "chatbot", setupTaskPath);
+  } = useSetupPersonaSampling(options, "chatbot", setupTaskPath, isActive);
   const pipelinePersonaModelLabel = useMemo(
     () => personaModelPipelineLabel(personaModel, personaModelOptions),
     [personaModel, personaModelOptions],

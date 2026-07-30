@@ -81,7 +81,7 @@ Playground uses this for Random / Stratified (and optional Quick pick) defaults.
 {
   "schemaVersion": "1.0",
   "defaultMode": "stratified",
-  "pool": "persona/datasets/bench-dev-sample",
+  "pool": "persona/datasets/matraix-persona-dev-sample",
   "sources": ["Nemotron"],
   "dimensionFilters": {
     "age_bracket": ["25-34", "35-44"],
@@ -103,7 +103,7 @@ Playground uses this for Random / Stratified (and optional Quick pick) defaults.
 | `sampleSizePerValueGroup` | **Stratified strategy A (per-cell):** take **N per combination**. Total = `N × (# cells)`. **Do not also set `sampleSize`.** |
 | `sampleSize` | Random: hard sample count. **Stratified strategy B (total N):** spread as `ceil(sampleSize / #cells)` then clip to `sampleSize`. Must be **≥ # cells**. **Do not also set `sampleSizePerValueGroup`.** |
 | `cohortId` | Optional saved cohort under `persona/datasets/cohorts/` |
-| `pool` | Defaults to bench-dev-sample |
+| `pool` | Defaults to matraix-persona-dev-sample |
 
 **Stratified sampling — two mutually exclusive strategies:**
 
@@ -112,8 +112,9 @@ Playground uses this for Random / Stratified (and optional Quick pick) defaults.
 | Per-cell | `sampleSizePerValueGroup` | `sampleSize` | `N × #cells` |
 | Total N | `sampleSize` | `sampleSizePerValueGroup` | exactly `sampleSize` |
 
-1. Thin / missing cells → synthesize a local `_generated` pool (or run the
-   CLI below), then sample.
+1. Thin / missing cells → sample from `matraix-persona-1m`, widen
+   `dimensionFilters` / sources, or use a saved cohort — sampling never
+   synthesizes personas.
 2. Per-cell: guarantee N in each cell; total follows from the grid.
 3. Total N: guarantee `ceil(sampleSize / #cells)` capacity per cell, sample,
    clip to `sampleSize`. Author `sampleSize` ≥ # cells.
@@ -125,33 +126,17 @@ to edit filters themselves, then turn it back on to re-apply the task default.
 
 ### Ensuring pool coverage
 
-**Why this exists:** the production persona dataset is not ready yet. Until then
-we use **synthetic** personas (`bench-dev-sample` + optional
-`generate_dev_personas.py` top-ups) so contributors can still **validate task
-design** and the **persona-aware reporting / analysis** the task needs — not so
-the small fixture is treated as a final population.
+`persona/datasets/matraix-persona-dev-sample/` is a small ~200-persona fixture for
+smoke and local UI work. Narrow `dimensionFilters` (and stratified cells) often
+undershoot it.
 
-The checked-in fixture `persona/datasets/bench-dev-sample/` is only ~200
-personas. Narrow `dimensionFilters` (and stratified cells) often undershoot
-that pool.
+**When coverage fails**, do one of:
 
-**Recommended (manual, before Playground):** top up a local pool from the
-strategy so contributors never surprise-fail on the 200-person fixture:
+1. Sample from production: set `"pool"` to `persona/datasets/matraix-persona-1m`
+   (or choose that pool in Playground).
+2. Widen `dimensionFilters` / `sources` until the fixture (or 1M) has enough matches.
+3. Use a saved cohort under `persona/datasets/cohorts/` that already has enough
+   personas.
 
-```bash
-uv run python persona/scripts/generate_dev_personas.py \
-  --strategy application/tasks/<your-task>/persona_strategy.json
-```
-
-This expands `dimensionFilters` into strata, synthesizes consistent personas
-into `persona/datasets/_generated/strategy-<task-slug>/` (gitignored), and
-prints next steps. Point `"pool"` at that directory for local runs (do **not**
-commit generated YAML into `bench-dev-sample` unless you are intentionally
-curating the shared fixture).
-
-**Playground / job launch fallback:** if sampling still hits a coverage error
-(or stratified mode finds empty/thin cells vs the effective per-cell quota)
-and the request has `dimensionFilters`, the backend auto-generates (or reuses)
-the same `_generated/strategy-<slug>/` pool and retries — synthesizing persona
-cards for missing filter strata. If auto top-up fails, the UI / API error
-includes the manual CLI command above.
+Playground / job launch **does not** auto-synthesize `_generated` pools. Thin
+coverage raises an error with the same recovery hint.

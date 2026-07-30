@@ -188,7 +188,7 @@ export function WebEvalCockpit({
     taskPersonaStrategy,
     useTaskDefaultStrategy,
     setUseTaskDefaultStrategy,
-  } = useSetupPersonaSampling(options, "web", setupTaskPath);
+  } = useSetupPersonaSampling(options, "web", setupTaskPath, isActive);
   const {
     batchJobName,
     batchTaskId,

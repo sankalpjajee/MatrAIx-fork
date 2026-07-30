@@ -9,6 +9,13 @@ import {
   type PersonaSamplingMode,
 } from "./personaSamplingTypes";
 
+/** Drop legacy synthetic strategy pools from restored setup. */
+export function sanitizePersonaPool(pool: string | null | undefined): string {
+  const text = (pool ?? "").trim();
+  if (!text || text.includes("/_generated/")) return PERSONA_BENCH_POOL;
+  return text;
+}
+
 export interface CockpitPersonaSetupRecord {
   selectedPersonaIds: string[];
   samplingMode: PersonaSamplingMode;
@@ -23,7 +30,7 @@ export interface CockpitPersonaSetupRecord {
   sampleSizePerValueGroup: number | null;
   parallelTrials: number;
   personaModel: string;
-  /** Pool used for the current cohort (may be an auto-generated ``_generated`` path). */
+  /** Pool used for the current cohort (never restore legacy ``_generated`` paths). */
   personaPool: string;
   /** When true, sampling follows the task's persona_strategy.json and custom filters stay locked. */
   useTaskDefaultStrategy: boolean;
@@ -148,10 +155,9 @@ function normalizeRecord(
       typeof record.personaModel === "string" && record.personaModel && record.personaModel !== OLD_DEFAULT_MODEL
         ? record.personaModel
         : fallbackPersonaModel,
-    personaPool:
-      typeof record.personaPool === "string" && record.personaPool.trim()
-        ? record.personaPool.trim()
-        : PERSONA_BENCH_POOL,
+    personaPool: sanitizePersonaPool(
+      typeof record.personaPool === "string" ? record.personaPool : PERSONA_BENCH_POOL,
+    ),
     // Legacy entries omit this flag — prefer task default until the user turns it off.
     useTaskDefaultStrategy:
       typeof record.useTaskDefaultStrategy === "boolean" ? record.useTaskDefaultStrategy : true,
@@ -237,7 +243,7 @@ export function setupFromPersonaStrategy(
   }
 
   if (typeof strategy.pool === "string" && strategy.pool.trim()) {
-    next.personaPool = strategy.pool.trim();
+    next.personaPool = sanitizePersonaPool(strategy.pool);
   }
 
   // Fresh strategy apply clears prior preview selection and locks custom filters.

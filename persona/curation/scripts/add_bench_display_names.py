@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Bake synthetic display_name into bench-dev-sample YAML files and manifest.json."""
+"""Bake synthetic display_name into matraix-persona-dev-sample YAML files and manifest.json."""
 
 from __future__ import annotations
 
@@ -15,7 +15,7 @@ if str(REPO_ROOT / "src") not in sys.path:
 
 from personabench.persona_display_name import synthetic_display_name  # noqa: E402
 
-POOL_DIR = REPO_ROOT / "persona" / "datasets" / "bench-dev-sample"
+POOL_DIR = REPO_ROOT / "persona" / "datasets" / "matraix-persona-dev-sample"
 MANIFEST_PATH = POOL_DIR / "manifest.json"
 
 

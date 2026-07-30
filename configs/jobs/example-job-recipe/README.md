@@ -9,7 +9,7 @@ uv run harbor run -c configs/jobs/example-job-recipe/<recipe>.yaml
 The recipes use the checked-in sample persona:
 
 ```text
-persona/datasets/bench-dev-sample/persona_0042.yaml
+persona/datasets/matraix-persona-dev-sample/persona_0042.yaml
 ```
 
 Included recipes:

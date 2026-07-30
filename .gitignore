@@ -255,10 +255,14 @@ persona/post_process/**/jobs/sbatch_logs/
 persona/curation/attribute_pool/outputs/
 persona/curation/attribute_pool/sources/acs_pums/*.csv
 persona/curation/attribute_pool/sources/raw/
+# Generated synthetic pools (bench-dev-2000, etc.). Checked-in fixture is
+# persona/datasets/matraix-persona-dev-sample/ (not matched by this pattern).
 persona/datasets/bench-dev-*/
-!persona/datasets/bench-dev-sample/
-!persona/datasets/bench-dev-sample/**
 persona/datasets/_generated/
+# Production 1M release mirror + sampled cohorts (large / machine-local).
+persona/datasets/matraix-persona-1m/release/
+persona/datasets/matraix-persona-1m/cohorts/
+persona/datasets/matraix-persona-1m/indexes/
 configs/jobs/application-task-job-recipe/*.yaml
 configs/jobs/application-task-job-recipe/*.meta.json
 configs/jobs/application-task-job-recipe/*.launch.json

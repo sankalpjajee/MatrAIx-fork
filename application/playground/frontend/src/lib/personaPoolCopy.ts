@@ -19,51 +19,29 @@ export function isPersonaPoolCoverageError(message: string | null | undefined): 
     text.includes("exceeds matched pool size") ||
     text.includes("No personas with stratify fields") ||
     text.includes("sample_size_per_value_group=") ||
-    text.includes("generate_dev_personas.py --strategy")
+    text.includes("Incomplete stratify coverage") ||
+    text.includes("matraix-persona-1m")
   );
 }
 
-export function personaStrategyGenerateCommand(taskPath?: string | null): string {
-  const cleaned = (taskPath ?? "").trim().replace(/\/+$/, "");
-  const strategy = cleaned
-    ? `${cleaned}/persona_strategy.json`
-    : "application/tasks/<task>/persona_strategy.json";
-  return `uv run python persona/scripts/generate_dev_personas.py --strategy ${strategy}`;
-}
-
-export function personaPoolCoverageHint(taskPath?: string | null): string {
+export function personaPoolCoverageHint(_taskPath?: string | null): string {
   return (
-    "Auto pool top-up was unavailable. Generate a local strategy pool manually, " +
-    'then point persona_strategy.json "pool" at the printed _generated path:\n' +
-    personaStrategyGenerateCommand(taskPath)
+    "Pool coverage is too thin for these filters. Sample from " +
+    "persona/datasets/matraix-persona-1m, widen dimensionFilters / sources, " +
+    "or use a saved cohort with enough matches."
   );
 }
 
-/** Prefer the API message when it already includes the recovery command. */
+/** Prefer the API message; fall back to a production-pool recovery hint. */
 export function formatPersonaSampleError(
   message: string,
   taskPath?: string | null,
-): { summary: string; command: string | null } {
+): string {
   const trimmed = message.trim();
-  const commandMatch = trimmed.match(
-    /uv run python persona\/scripts\/generate_dev_personas\.py --strategy \S+/,
-  );
-  if (commandMatch) {
-    const summary = trimmed
-      .replace(commandMatch[0], "")
-      .replace(/\n{3,}/g, "\n\n")
-      .replace(/\n\nFix:|\n\nPool coverage[\s\S]*$/i, "")
-      .trim();
-    return {
-      summary: summary || "Pool coverage is too thin for these filters.",
-      command: commandMatch[0],
-    };
-  }
   if (isPersonaPoolCoverageError(trimmed)) {
-    return {
-      summary: trimmed.split("\n")[0] || trimmed,
-      command: personaStrategyGenerateCommand(taskPath),
-    };
+    const first = trimmed.split("\n").find((line) => line.trim()) || trimmed;
+    const alreadyHinted = trimmed.includes("matraix-persona-1m");
+    return alreadyHinted ? trimmed : `${first}\n\n${personaPoolCoverageHint(taskPath)}`;
   }
-  return { summary: trimmed, command: null };
+  return trimmed;
 }

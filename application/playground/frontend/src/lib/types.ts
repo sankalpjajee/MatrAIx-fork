@@ -917,7 +917,15 @@ export interface HarborJobLaunchResponse {
 
 export interface PersonaPoolDimensionOption {
   id: string;
+  label?: string;
   values: string[];
+}
+
+export interface PersonaPoolDimensionSubgroup {
+  id: string;
+  label: string;
+  dimensionIds: string[];
+  dimensions: PersonaPoolDimensionOption[];
 }
 
 export interface PersonaPoolDimensionGroup {
@@ -925,6 +933,8 @@ export interface PersonaPoolDimensionGroup {
   label: string;
   dimensionIds: string[];
   dimensions: PersonaPoolDimensionOption[];
+  /** Present for production 1M catalog (3-layer taxonomy). */
+  subgroups?: PersonaPoolDimensionSubgroup[];
 }
 
 export interface PersonaPoolCatalog {
@@ -944,12 +954,28 @@ export interface PersonaPoolCatalog {
   };
 }
 
+export interface PersonaMatchedAttribute {
+  dimensionId: string;
+  label: string;
+  value: string;
+  evidence?: string | null;
+  method?: string;
+  confidence?: number;
+}
+
+export interface PersonaMatchAttributesResponse {
+  prompt: string;
+  attributes: PersonaMatchedAttribute[];
+  usedLlm: boolean;
+}
+
 export interface PersonaDatasetOption {
   pool: string;
   label: string;
-  kind: "dataset" | "generated" | string;
+  kind: "dataset" | "generated" | "production" | "production-cohort" | string;
   count: number;
   default?: boolean;
+  available?: boolean;
 }
 
 export interface PersonaDatasetListResponse {
@@ -977,8 +1003,6 @@ export interface PersonaPoolSampleResult {
     dimensions?: Record<string, string>;
   }>;
   stratifyFields?: string[];
-  poolEnsured?: boolean;
-  poolReused?: boolean;
 }
 
 export interface PersonaPoolPersonaCard {
@@ -987,6 +1011,8 @@ export interface PersonaPoolPersonaCard {
   source?: string;
   path?: string;
   dimensions: Record<string, string>;
+  /** Lowercased haystack of id/name/source + all YAML attribute keys/values. */
+  searchText?: string;
 }
 
 export interface PersonaPoolCardsResponse {
@@ -994,11 +1020,34 @@ export interface PersonaPoolCardsResponse {
   personas: PersonaPoolPersonaCard[];
 }
 
+export interface PersonaDimensionItem {
+  id: string;
+  label: string;
+  value: string;
+  category?: string;
+}
+
+export interface PersonaDimensionSubgroup {
+  id: string;
+  label: string;
+  count: number;
+  items: PersonaDimensionItem[];
+}
+
+export interface PersonaDimensionGroup {
+  id: string;
+  label: string;
+  count: number;
+  subgroups: PersonaDimensionSubgroup[];
+}
+
 export interface PersonaPoolPersonaDetail extends PersonaPoolPersonaCard {
   pool: string;
+  path?: string | null;
   yaml?: string;
   profileMarkdown?: string;
   dimensions: Record<string, string>;
+  dimensionGroups?: PersonaDimensionGroup[];
 }
 
 export interface TaskPersonaStrategy {
@@ -1034,7 +1083,11 @@ export interface TaskDetail {
 }
 
 /** Unified persona pool for all Playground sampling. */
-export const PERSONA_BENCH_POOL = "persona/datasets/bench-dev-sample";
+export const PERSONA_BENCH_POOL = "persona/datasets/matraix-persona-dev-sample";
+/** Production 1M coreset (HF MatrAIx_Persona_1M_Public_Release). */
+export const PERSONA_PRODUCTION_1M_POOL = "persona/datasets/matraix-persona-1m";
+export const PERSONA_SAMPLE_SIZE_MAX_DEV = 500;
+export const PERSONA_SAMPLE_SIZE_MAX_PRODUCTION = 10_000;
 
 /**
  * Large stratified cohorts keep the full personaId list for launch, but only

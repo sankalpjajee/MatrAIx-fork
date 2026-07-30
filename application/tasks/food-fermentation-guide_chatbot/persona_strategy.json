@@ -12,6 +12,14 @@
     ],
     "intent": [
       "Get task done"
+    ],
+    "lstyle_diet_type": [
+      "Omnivore",
+      "Flexitarian",
+      "Vegetarian",
+      "Vegan",
+      "Pescatarian",
+      "Keto/low-carb"
     ]
   },
   "sampleSizePerValueGroup": 1,

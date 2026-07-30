@@ -12,6 +12,19 @@
     ],
     "intent": [
       "Get task done"
+    ],
+    "risk_tolerance": [
+      "Risk-averse",
+      "Cautious",
+      "Balanced",
+      "Risk-tolerant",
+      "Risk-seeking"
+    ],
+    "economic_motivation": [
+      "Cost-sensitive",
+      "Value-driven",
+      "Premium-seeking",
+      "Indifferent"
     ]
   },
   "sampleSizePerValueGroup": 1,

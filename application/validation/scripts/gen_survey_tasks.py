@@ -10,7 +10,7 @@ rule-based signal noted in the README.
 Writes application/validation/tasks/probe-survey_<attr-slug>/ for each attribute.
 """
 from __future__ import annotations
-import os, json
+import os
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[3]

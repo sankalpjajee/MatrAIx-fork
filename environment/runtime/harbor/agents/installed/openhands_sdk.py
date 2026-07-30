@@ -46,6 +46,7 @@ class OpenHandsSDK(BaseInstalledAgent):
         collect_token_ids: bool = False,
         max_iterations: int | None = None,
         temperature: float | None = None,
+        model_info: dict | None = None,
         *args,
         **kwargs,
     ):
@@ -61,6 +62,7 @@ class OpenHandsSDK(BaseInstalledAgent):
             max_iterations: Maximum number of agent iterations per run.
                 Maps to the SDK's max_iteration_per_run parameter.
             temperature: LLM sampling temperature (0.0 to 2.0).
+            model_info: Optional LiteLLM model metadata (max_input_tokens, …).
         """
         super().__init__(*args, **kwargs)
         self._reasoning_effort = reasoning_effort
@@ -69,6 +71,7 @@ class OpenHandsSDK(BaseInstalledAgent):
         self._collect_token_ids = collect_token_ids
         self._max_iterations = max_iterations
         self._temperature = temperature
+        self._model_info = model_info
 
     @staticmethod
     def name() -> str:
@@ -280,6 +283,16 @@ class OpenHandsSDK(BaseInstalledAgent):
 
         if self._temperature is not None:
             env["LLM_TEMPERATURE"] = str(self._temperature)
+
+        # Persona / full-profile runs need an explicit input ceiling so the
+        # SDK does not under-estimate context when task text is appended.
+        if self._model_info:
+            max_in = self._model_info.get("max_input_tokens")
+            if max_in:
+                env["LLM_MAX_INPUT_TOKENS"] = str(max_in)
+            max_out = self._model_info.get("max_output_tokens")
+            if max_out:
+                env["LLM_MAX_OUTPUT_TOKENS"] = str(max_out)
 
         # Build the command that runs our agent script
         command = f"""

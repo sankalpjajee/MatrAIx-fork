@@ -24,6 +24,7 @@ from backend.service.config import harbor_persona_model
 from playground.structured_exposure import coerce_turn_view
 from playground.feedback import questionnaire_from_feedback
 from playground.types import Persona, PlaygroundConfig
+from matraix.persona_agent_context import apply_persona_context_to_agent_spec
 
 SCORER_PACKAGE_TARGET = "/app/playground"
 SCORER_PACKAGE_PARENT = "/app"
@@ -401,11 +402,13 @@ class HarborPlaygroundRunner:
                 ],
             },
             "agents": [
-                {
-                    "name": "persona-claude-code",
-                    "model_name": config.persona_model or harbor_persona_model(),
-                    "kwargs": {"persona_path": str(persona_path)},
-                }
+                apply_persona_context_to_agent_spec(
+                    {
+                        "name": "persona-claude-code",
+                        "model_name": config.persona_model or harbor_persona_model(),
+                        "kwargs": {"persona_path": str(persona_path)},
+                    }
+                )
             ],
             "tasks": [
                 {

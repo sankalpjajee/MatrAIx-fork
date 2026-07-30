@@ -11,6 +11,8 @@ export interface UrlState {
   pgTask: string | null;
   /** Deep-link task id from Task Gallery into Playground selection. */
   pgTaskId: string | null;
+  /** One-shot flag: apply Persona World cohort handoff into cockpit sampling. */
+  pgPersonaHandoff: string | null;
   /** Active single-run Harbor job in the cockpit (not the Runs sub-view). */
   cockpitJob: string | null;
   cockpitTrial: string | null;
@@ -27,6 +29,7 @@ const KEYS = [
   "harborTrial",
   "pgTask",
   "pgTaskId",
+  "pgPersonaHandoff",
   "cockpitJob",
   "cockpitTrial",
   "cockpitBatch",

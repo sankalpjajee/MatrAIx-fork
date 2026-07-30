@@ -16,6 +16,7 @@ from playground.user_sim.tools import (
     normalize_sim_message,
     tool_definitions,
 )
+from matraix.persona_agent_context import CHATBOT_MAX_OUTPUT_TOKENS
 
 
 class ToolStepClient(Protocol):
@@ -122,7 +123,7 @@ class AnthropicToolStepClient:
                 convo.append({"role": role, "content": content})
         body = {
             "model": self.model,
-            "max_tokens": 1200,
+            "max_tokens": CHATBOT_MAX_OUTPUT_TOKENS,
             "system": "\n\n".join(system_parts),
             "messages": convo,
             "tools": self._tools,

@@ -47,7 +47,7 @@ This log records the curated migration from MatrAIx into PersonaBench.
 - Imported into:
   - `persona/schema/`
   - `persona/curation/attribute_pool/`
-  - `persona/datasets/bench-dev-sample/`
+  - `persona/datasets/matraix-persona-dev-sample/`
 - Excluded:
   - full `persona/datasets/bench-dev-2000/`
   - generated attribute-pool `outputs/`
@@ -81,7 +81,7 @@ This log records the curated migration from MatrAIx into PersonaBench.
   - Task registry names use `personabench/application-*`.
   - Local temporary output directories use `/tmp/personabench-*`.
   - Example README persona paths point at
-    `persona/datasets/bench-dev-sample/`.
+    `persona/datasets/matraix-persona-dev-sample/`.
 
 ### Step 5: Import shared utility package
 
@@ -105,7 +105,7 @@ This log records the curated migration from MatrAIx into PersonaBench.
 - Compatibility adjustments:
   - Package/import namespace is `personabench`, not `matraix`.
   - Default schema path is `persona/schema/dimensions.json`.
-  - Default dataset path is `persona/datasets/bench-dev-sample`.
+  - Default dataset path is `persona/datasets/matraix-persona-dev-sample`.
   - `task_catalog.py` uses the Python standard-library `tomllib`.
 
 ### Step 6: Document external artifact handoff and next waves
@@ -202,7 +202,7 @@ This log records the curated migration from MatrAIx into PersonaBench.
   - `jobs/`
 - Compatibility adjustments:
   - Recipe persona paths point at
-    `persona/datasets/bench-dev-sample/persona_0042.yaml`.
+    `persona/datasets/matraix-persona-dev-sample/persona_0042.yaml`.
   - Recipe documentation records what remains deferred and why.
 
 ### Step 10: Import PersonaBench task layer
@@ -715,7 +715,7 @@ This log records the curated migration from MatrAIx into PersonaBench.
 - Compatibility adjustments:
   - Task registry name uses `personabench/application-persona-survey`.
   - README smoke example points at
-    `persona/datasets/bench-dev-sample/persona_0042.yaml`.
+    `persona/datasets/matraix-persona-dev-sample/persona_0042.yaml`.
 - Deferred:
   - `applications/recommendation_chatbot_eval/backend/service/harbor_survey_eval.py`
   - Playground backend tests and runner integration
@@ -1049,7 +1049,7 @@ This log records the curated migration from MatrAIx into PersonaBench.
   - `configs/jobs/README.md`
   - `docs/migration/matraix-parity-matrix.md`
   - `persona/datasets/README.md`
-  - `persona/datasets/bench-dev-sample/`
+  - `persona/datasets/matraix-persona-dev-sample/`
   - `tests/environment/test_examples_smoke.py`
   - `tests/environment/test_job_recipes.py`
   - `tests/unit/viewer/test_frontend_source_parity.py`
@@ -1059,8 +1059,8 @@ This log records the curated migration from MatrAIx into PersonaBench.
   - Generated application and persona grounding recipes are checked in as
     curated fixtures, not broad generated-output directories.
   - Recipe persona paths are adapted from `persona/datasets/bench-dev-2000/`
-    to `persona/datasets/bench-dev-sample/`.
-  - `bench-dev-sample/` is expanded from 2 to 14 checked-in personas, only to
+    to `persona/datasets/matraix-persona-dev-sample/`.
+  - `matraix-persona-dev-sample/` is expanded from 2 to 14 checked-in personas, only to
     cover smoke tests and the curated recipe fixtures. The full
     `bench-dev-2000` cohort remains external.
   - All source `examples/tasks/` runtime examples are imported. Source

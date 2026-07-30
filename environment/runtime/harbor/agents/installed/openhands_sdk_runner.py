@@ -212,6 +212,18 @@ def main():
     temperature_raw = os.environ.get("LLM_TEMPERATURE")
     if temperature_raw:
         llm_kwargs["temperature"] = float(temperature_raw)
+    max_input_raw = os.environ.get("LLM_MAX_INPUT_TOKENS")
+    if max_input_raw:
+        try:
+            llm_kwargs["max_input_tokens"] = int(max_input_raw)
+        except ValueError:
+            pass
+    max_output_raw = os.environ.get("LLM_MAX_OUTPUT_TOKENS")
+    if max_output_raw:
+        try:
+            llm_kwargs["max_output_tokens"] = int(max_output_raw)
+        except ValueError:
+            pass
     llm = LLM(**llm_kwargs)
 
     # Configure tools

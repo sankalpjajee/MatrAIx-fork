@@ -162,7 +162,7 @@ Request body:
   "taskPath": "application/tasks/example-survey_product-feedback",
   "sampleSize": 3,
   "seed": 42,
-  "personaPool": "persona/datasets/bench-dev-sample",
+  "personaPool": "persona/datasets/matraix-persona-dev-sample",
   "personaIds": ["0042"],
   "mode": "auto",
   "plane": "harbor",

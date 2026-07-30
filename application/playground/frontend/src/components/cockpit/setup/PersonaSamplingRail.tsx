@@ -1,10 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { api, ApiError } from "@/lib/api";
 import {
   PERSONA_BENCH_POOL,
   PERSONA_CARD_PREVIEW_LIMIT,
+  PERSONA_PRODUCTION_1M_POOL,
+  PERSONA_SAMPLE_SIZE_MAX_DEV,
+  PERSONA_SAMPLE_SIZE_MAX_PRODUCTION,
   type PersonaPoolPersonaCard,
   type TaskPersonaStrategy,
 } from "@/lib/types";
@@ -25,6 +28,14 @@ import {
 } from "./personaSamplingTypes";
 import type { PlaygroundTaskType } from "../TaskTypeSwitch";
 
+function slugifyDatasetName(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
 const TAB_LABELS: Record<PersonaSamplingMode, string> = {
   single: "Quick",
   random: "Random",
@@ -41,14 +52,24 @@ const TAB_TITLES: Record<PersonaSamplingMode, string> = {
 
 const TAB_ORDER: PersonaSamplingMode[] = ["single", "random", "stratified", "all"];
 
-/** Default showcase personas from bench-dev-sample (smoke + spread). */
+/** Default showcase personas from matraix-persona-dev-sample (smoke + spread). */
 const QUICK_PICK_PERSONA_IDS = ["0042", "0001", "0328", "0058", "0012", "0020", "0030", "0040"];
 
-const SAMPLE_SIZE_MAX = 500;
-
-function clampSampleSize(value: number): number {
+function clampSampleSize(value: number, max = PERSONA_SAMPLE_SIZE_MAX_DEV): number {
   if (!Number.isFinite(value)) return 4;
-  return Math.min(SAMPLE_SIZE_MAX, Math.max(2, Math.round(value)));
+  return Math.min(max, Math.max(2, Math.round(value)));
+}
+
+function isProduction1mCohortPool(pool: string): boolean {
+  return pool.includes("/matraix-persona-1m/cohorts/");
+}
+
+/** Dataset dropdown source — cohorts are launch caches, not selectable sources. */
+function datasetSourcePool(pool: string): string {
+  if (pool === PERSONA_PRODUCTION_1M_POOL || isProduction1mCohortPool(pool)) {
+    return PERSONA_PRODUCTION_1M_POOL;
+  }
+  return pool;
 }
 
 function clampPerCell(value: number): number {
@@ -154,7 +175,7 @@ function fallbackQuickPickCards(): PersonaPoolPersonaCard[] {
   return QUICK_PICK_PERSONA_IDS.map((personaId) => ({
     personaId,
     name: syntheticDisplayName(personaId),
-    source: "bench-dev-sample",
+    source: "matraix-persona-dev-sample",
     dimensions: {},
   }));
 }
@@ -186,7 +207,7 @@ export interface PersonaSamplingRailProps {
   onUseTaskDefaultStrategyChange?: (useDefault: boolean) => void;
   /** Called when sampling resolves to a (possibly auto-generated) pool path. */
   onPersonaPoolChange?: (pool: string) => void;
-  /** Active pool path for the footer label (defaults to bench-dev-sample). */
+  /** Active pool path for the footer label (defaults to matraix-persona-dev-sample). */
   personaPool?: string | null;
   disabled?: boolean;
 }
@@ -222,14 +243,25 @@ export function PersonaSamplingRail({
   const [detailPersona, setDetailPersona] = useState<PersonaPoolPersonaCard | null>(null);
   const [generatedCards, setGeneratedCards] = useState<PersonaPoolPersonaCard[]>([]);
   const [generateError, setGenerateError] = useState<string | null>(null);
-  const [generateCommand, setGenerateCommand] = useState<string | null>(null);
-  const [generating, setGenerating] = useState(false);
+    const [generating, setGenerating] = useState(false);
   /** Local draft so users can clear/retype without clamp fighting every keystroke. */
   const [sampleSizeDraft, setSampleSizeDraft] = useState<string | null>(null);
   const [perCellDraft, setPerCellDraft] = useState<string | null>(null);
+  const [saveNameDraft, setSaveNameDraft] = useState("");
+  const [saveOpen, setSaveOpen] = useState(false);
+  const [savingDataset, setSavingDataset] = useState(false);
+  const [saveDatasetError, setSaveDatasetError] = useState<string | null>(null);
 
+  const queryClient = useQueryClient();
   const activePool = personaPool?.trim() || PERSONA_BENCH_POOL;
-  const isBenchPool = activePool === PERSONA_BENCH_POOL;
+  const sourcePool = datasetSourcePool(activePool);
+  const isBenchPool = sourcePool === PERSONA_BENCH_POOL;
+  const isProduction1m = sourcePool === PERSONA_PRODUCTION_1M_POOL;
+  const canSaveAsDataset =
+    isProduction1mCohortPool(activePool) && selectedPersonaIds.length > 0;
+  const sampleSizeMax = isProduction1m
+    ? PERSONA_SAMPLE_SIZE_MAX_PRODUCTION
+    : PERSONA_SAMPLE_SIZE_MAX_DEV;
 
   const datasetsQuery = useQuery({
     queryKey: ["persona-pool-datasets"],
@@ -238,27 +270,27 @@ export function PersonaSamplingRail({
   });
 
   const catalogQuery = useQuery({
-    queryKey: ["persona-pool-catalog", activePool],
-    queryFn: () => api.getPersonaPoolCatalog(activePool),
+    queryKey: ["persona-pool-catalog", sourcePool],
+    queryFn: () => api.getPersonaPoolCatalog(sourcePool),
     staleTime: 60_000,
   });
 
   const defaultCardsQuery = useQuery({
     queryKey: [
       "persona-pool-default-cards",
-      activePool,
+      sourcePool,
       isBenchPool ? QUICK_PICK_PERSONA_IDS.join(",") : "preview",
     ],
     queryFn: async () => {
       try {
         return await api.getPersonaPoolCards({
-          pool: activePool,
+          pool: sourcePool,
           limit: QUICK_PICK_PERSONA_IDS.length,
           personaIds: isBenchPool ? QUICK_PICK_PERSONA_IDS : undefined,
         });
       } catch {
         return {
-          pool: activePool,
+          pool: sourcePool,
           personas: isBenchPool ? fallbackQuickPickCards() : [],
         };
       }
@@ -302,7 +334,7 @@ export function PersonaSamplingRail({
       return selectedPersonaIds.map((personaId) => ({
         personaId,
         name: syntheticDisplayName(personaId),
-        source: "bench-dev-sample",
+        source: "matraix-persona-dev-sample",
         dimensions: {},
       }));
     }
@@ -340,7 +372,6 @@ export function PersonaSamplingRail({
   const handleSelectAll = useCallback(async () => {
     setGenerating(true);
     setGenerateError(null);
-    setGenerateCommand(null);
     try {
       const pool = activePool;
       const idsResult = await api.listPersonaPoolIds(pool);
@@ -360,8 +391,7 @@ export function PersonaSamplingRail({
       const raw =
         err instanceof ApiError ? err.message : "Could not load the full dataset cohort.";
       setGenerateError(raw);
-      setGenerateCommand(null);
-    } finally {
+      } finally {
       setGenerating(false);
     }
   }, [activePool, onPersonaPoolChange, onSelectedPersonaIdsChange]);
@@ -373,7 +403,6 @@ export function PersonaSamplingRail({
     }
     setGenerating(true);
     setGenerateError(null);
-    setGenerateCommand(null);
     try {
       const dimensionFilters = filtersForSampleApi(filters);
       // Only send per-cell when explicitly set. Omitting it makes the backend
@@ -384,7 +413,7 @@ export function PersonaSamplingRail({
           ? clampPerCell(sampleSizePerValueGroup)
           : undefined;
       const result = await api.samplePersonaPool({
-        pool: personaPool?.trim() || PERSONA_BENCH_POOL,
+        pool: sourcePool,
         sampleSize,
         seed,
         sources: filters.sources.length ? filters.sources : undefined,
@@ -392,7 +421,6 @@ export function PersonaSamplingRail({
         stratifyFields: mode === "stratified" ? stratifyFields : undefined,
         sampleSizePerValueGroup: perCell,
         taskPath: taskPath?.trim() || undefined,
-        autoEnsureStrategyPool: true,
       });
       // Select the full cohort immediately; only keep a small card preview for the rail.
       const cards = result.personas.slice(0, PERSONA_CARD_PREVIEW_LIMIT).map((row) => ({
@@ -405,13 +433,13 @@ export function PersonaSamplingRail({
       setGeneratedCards(cards);
       onSelectedPersonaIdsChange(result.personaIds);
       if (result.pool) {
+        // Launch needs the materialized YAML dir; Dataset UI still shows sourcePool.
         onPersonaPoolChange?.(result.pool);
       }
     } catch (err) {
       const raw = err instanceof ApiError ? err.message : "Could not generate sample.";
       const formatted = formatPersonaSampleError(raw, taskPath);
-      setGenerateError(formatted.summary);
-      setGenerateCommand(formatted.command);
+      setGenerateError(formatted);
     } finally {
       setGenerating(false);
     }
@@ -421,48 +449,90 @@ export function PersonaSamplingRail({
     mode,
     onPersonaPoolChange,
     onSelectedPersonaIdsChange,
-    personaPool,
     sampleSize,
     sampleSizePerValueGroup,
     seed,
+    sourcePool,
     stratifyFields,
     taskPath,
   ]);
 
   const datasetOptions = useMemo<CockpitSelectOption[]>(() => {
     const listed = datasetsQuery.data?.datasets ?? [];
-    const options: CockpitSelectOption[] = listed.map((item) => ({
-      value: item.pool,
-      label: item.label,
-      meta: item.count > 0 ? `${item.count} personas` : undefined,
-      group: item.kind === "generated" ? "Generated" : "Datasets",
-    }));
-    if (!options.some((opt) => opt.value === activePool)) {
-      const slug = activePool.split("/").filter(Boolean).pop() || "bench-dev-sample";
+    const options: CockpitSelectOption[] = listed.map((item) => {
+      const unavailable = item.kind === "production" && item.available === false;
+      return {
+        value: item.pool,
+        label: item.label,
+        meta: unavailable
+          ? "download HF release / set MATRIX_PERSONA_1M_DIR"
+          : item.count > 0
+            ? `${item.count.toLocaleString()} personas`
+            : undefined,
+      };
+    });
+    if (!options.some((opt) => opt.value === sourcePool)) {
+      const slug = sourcePool.split("/").filter(Boolean).pop() || "matraix-persona-dev-sample";
       options.unshift({
-        value: activePool,
+        value: sourcePool,
         label: slug,
-        group: activePool.includes("/_generated/") ? "Generated" : "Datasets",
       });
     }
     if (options.length === 0) {
-      return [{ value: PERSONA_BENCH_POOL, label: "bench-dev-sample", group: "Datasets" }];
+      return [{ value: PERSONA_BENCH_POOL, label: "matraix-persona-dev-sample" }];
     }
     return options;
-  }, [activePool, datasetsQuery.data?.datasets]);
+  }, [datasetsQuery.data?.datasets, sourcePool]);
 
   const handleDatasetChange = useCallback(
     (pool: string) => {
-      if (pool === activePool) return;
+      if (pool === sourcePool) return;
       onPersonaPoolChange?.(pool);
       onSelectedPersonaIdsChange([]);
       setGeneratedCards([]);
       setGenerateError(null);
-      setGenerateCommand(null);
-      setDetailPersona(null);
+        setDetailPersona(null);
+      setSaveOpen(false);
+      setSaveDatasetError(null);
+      if (pool === PERSONA_PRODUCTION_1M_POOL && mode === "all") {
+        onModeChange("random");
+      }
     },
-    [activePool, onPersonaPoolChange, onSelectedPersonaIdsChange],
+    [mode, onModeChange, onPersonaPoolChange, onSelectedPersonaIdsChange, sourcePool],
   );
+
+  const handleSaveAsDataset = useCallback(async () => {
+    const name = saveNameDraft.trim() || `cohort-${selectedPersonaIds.length}`;
+    const slug = slugifyDatasetName(name);
+    if (!slug) {
+      setSaveDatasetError("Enter a name with letters or numbers.");
+      return;
+    }
+    setSavingDataset(true);
+    setSaveDatasetError(null);
+    try {
+      const saved = await api.savePersonaDataset({
+        sourcePool: activePool,
+        name,
+      });
+      await queryClient.invalidateQueries({ queryKey: ["persona-pool-datasets"] });
+      onPersonaPoolChange?.(saved.pool);
+      setSaveOpen(false);
+      setSaveNameDraft("");
+    } catch (err) {
+      setSaveDatasetError(
+        err instanceof ApiError ? err.message : "Could not save dataset.",
+      );
+    } finally {
+      setSavingDataset(false);
+    }
+  }, [
+    activePool,
+    onPersonaPoolChange,
+    queryClient,
+    saveNameDraft,
+    selectedPersonaIds.length,
+  ]);
 
   const filterCount = activeFilterCount(filters);
   const poolCount = catalogQuery.data?.count;
@@ -470,10 +540,23 @@ export function PersonaSamplingRail({
     taskType === "survey" || taskType === "chatbot" || taskType === "web" || taskType === "os-app";
   const strategyLocked = hasTaskStrategy && useTaskDefaultStrategy;
   const customSamplingUnlocked = !strategyLocked;
-  const poolFooterLabel = poolSlugLabel(activePool);
+  const poolFooterLabel = isProduction1mCohortPool(activePool)
+    ? `${poolSlugLabel(sourcePool)} · sample ready`
+    : poolSlugLabel(sourcePool);
 
   return (
     <aside className="glass-panel glass-panel-rail relative flex h-full min-h-0 flex-col rounded-xl p-4">
+      {detailPersona ? (
+        <BenchPersonaDetailPanel
+          coverRail
+          embedded
+          persona={detailPersona}
+          pool={sourcePool}
+          onClose={() => setDetailPersona(null)}
+          className="min-h-0 flex-1"
+        />
+      ) : (
+      <>
       <div className="shrink-0">
         <CockpitRailHeader label="Persona" />
 
@@ -493,9 +576,10 @@ export function PersonaSamplingRail({
             label="Dataset"
             inlineLabel
             labelClassName="w-[4.25rem]"
-            value={activePool}
+            value={sourcePool}
             options={datasetOptions}
             disabled={disabled}
+            showSelectedMeta={false}
             onChange={handleDatasetChange}
           />
         </div>
@@ -522,20 +606,27 @@ export function PersonaSamplingRail({
         ) : null}
 
         <div className="cockpit-segment cockpit-segment--grid mb-2 grid-cols-4">
-          {TAB_ORDER.map((tab) => (
-            <button
-              key={tab}
-              type="button"
-              title={TAB_TITLES[tab]}
-              disabled={disabled || strategyLocked}
-              onClick={() => onModeChange(tab)}
-              className={`cockpit-segment__btn cockpit-segment__btn--compact w-full ${FOCUS_RING} ${
-                mode === tab ? "cockpit-segment__btn--active" : ""
-              }`}
-            >
-              {TAB_LABELS[tab]}
-            </button>
-          ))}
+          {TAB_ORDER.map((tab) => {
+            const allBlocked = tab === "all" && isProduction1m;
+            return (
+              <button
+                key={tab}
+                type="button"
+                title={
+                  allBlocked
+                    ? "All is disabled on the 1M production pool — sample up to 10,000 instead"
+                    : TAB_TITLES[tab]
+                }
+                disabled={disabled || strategyLocked || allBlocked}
+                onClick={() => onModeChange(tab)}
+                className={`cockpit-segment__btn cockpit-segment__btn--compact w-full ${FOCUS_RING} ${
+                  mode === tab ? "cockpit-segment__btn--active" : ""
+                }`}
+              >
+                {TAB_LABELS[tab]}
+              </button>
+            );
+          })}
         </div>
 
         {disabled && selectedPersonaIds.length > 0 ? (
@@ -645,14 +736,12 @@ export function PersonaSamplingRail({
                     </label>
                   ) : (
                     <label className="flex w-[4.25rem] shrink-0 flex-col gap-0.5">
-                      <span className="text-[12px] text-text-dim">
-                        Sample{typeof poolCount === "number" ? ` · ${poolCount}` : ""}
-                      </span>
+                      <span className="text-[12px] text-text-dim">Sample</span>
                       <input
                         type="number"
                         inputMode="numeric"
                         min={2}
-                        max={SAMPLE_SIZE_MAX}
+                        max={sampleSizeMax}
                         step={1}
                         value={sampleSizeDraft ?? sampleSize}
                         disabled={disabled}
@@ -667,7 +756,10 @@ export function PersonaSamplingRail({
                           const raw = sampleSizeDraft;
                           setSampleSizeDraft(null);
                           onSampleSizeChange(
-                            clampSampleSize(raw === "" || raw == null ? sampleSize : Number(raw)),
+                            clampSampleSize(
+                              raw === "" || raw == null ? sampleSize : Number(raw),
+                              sampleSizeMax,
+                            ),
                           );
                         }}
                         onKeyDown={(e) => {
@@ -697,26 +789,88 @@ export function PersonaSamplingRail({
             </div>
             {generateError ? (
               <div className="space-y-1.5 rounded-lg border border-danger/30 bg-danger/5 px-2.5 py-2">
-                <p className="text-[12px] leading-snug text-danger">{generateError}</p>
-                {generateCommand ? (
-                  <>
-                    <p className="text-[12px] leading-snug text-text-variant">
-                      Auto top-up failed. Generate a local strategy pool manually, then point{" "}
-                      <span className="font-mono">persona_strategy.json</span>{" "}
-                      <span className="font-mono">&quot;pool&quot;</span> at the printed path:
-                    </p>
-                    <pre className="custom-scrollbar overflow-x-auto rounded-md border border-outline/40 bg-field px-2 py-1.5 font-mono text-[11px] leading-relaxed text-primary">
-                      {generateCommand}
-                    </pre>
-                    <button
-                      type="button"
-                      className={`text-[12px] font-medium text-primary hover:underline ${FOCUS_RING}`}
-                      onClick={() => void navigator.clipboard.writeText(generateCommand)}
-                    >
-                      Copy command
-                    </button>
-                  </>
-                ) : null}
+                <p className="whitespace-pre-wrap text-[12px] leading-snug text-danger">{generateError}</p>
+              </div>
+            ) : null}
+            {canSaveAsDataset && !disabled ? (
+              <div className="rounded-lg border border-outline/40 bg-surface/40 px-2.5 py-2">
+                {!saveOpen ? (
+                  <button
+                    type="button"
+                    disabled={savingDataset}
+                    onClick={() => {
+                      setSaveOpen(true);
+                      setSaveDatasetError(null);
+                      if (!saveNameDraft.trim()) {
+                        const stamp = new Date().toISOString().slice(0, 10);
+                        setSaveNameDraft(`sample-${selectedPersonaIds.length}-${stamp}`);
+                      }
+                    }}
+                    className={`flex w-full items-center justify-center gap-1.5 rounded-md py-1.5 text-[12px] font-medium text-primary hover:bg-primary/5 disabled:opacity-50 ${FOCUS_RING}`}
+                  >
+                    <Sym name="save" size={14} />
+                    Save as dataset…
+                  </button>
+                ) : (
+                  <div className="space-y-1.5">
+                    <label className="block space-y-1">
+                      <span className="text-[11px] font-medium uppercase tracking-wide text-text-dim">
+                        Dataset name
+                      </span>
+                      <input
+                        type="text"
+                        value={saveNameDraft}
+                        disabled={savingDataset}
+                        placeholder="my-robinhood-cohort"
+                        onChange={(e) => setSaveNameDraft(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            void handleSaveAsDataset();
+                          }
+                          if (e.key === "Escape") {
+                            setSaveOpen(false);
+                            setSaveDatasetError(null);
+                          }
+                        }}
+                        className={`h-8 w-full rounded-md border border-outline/50 bg-field px-2 font-mono text-[12px] text-text-main disabled:opacity-50 ${FOCUS_RING}`}
+                      />
+                    </label>
+                    {saveNameDraft.trim() ? (
+                      <p className="truncate font-mono text-[10px] text-text-dim">
+                        persona/datasets/{slugifyDatasetName(saveNameDraft) || "…"}
+                      </p>
+                    ) : null}
+                    {saveDatasetError ? (
+                      <p className="text-[11px] leading-snug text-danger">{saveDatasetError}</p>
+                    ) : (
+                      <p className="text-[11px] leading-snug text-text-dim">
+                        Copies this sample into Dataset for reuse across tasks.
+                      </p>
+                    )}
+                    <div className="flex gap-1.5">
+                      <button
+                        type="button"
+                        disabled={savingDataset}
+                        onClick={() => {
+                          setSaveOpen(false);
+                          setSaveDatasetError(null);
+                        }}
+                        className={`h-8 flex-1 rounded-md border border-outline/50 text-[12px] text-text-variant hover:bg-surface-high/60 disabled:opacity-50 ${FOCUS_RING}`}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        disabled={savingDataset || !saveNameDraft.trim()}
+                        onClick={() => void handleSaveAsDataset()}
+                        className={`h-8 flex-1 rounded-md bg-primary/90 text-[12px] font-medium text-white hover:bg-primary disabled:opacity-50 ${FOCUS_RING}`}
+                      >
+                        {savingDataset ? "Saving…" : "Save"}
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             ) : null}
           </div>
@@ -724,14 +878,6 @@ export function PersonaSamplingRail({
       </div>
 
       <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto pr-0.5">
-        {detailPersona ? (
-          <BenchPersonaDetailPanel
-            embedded
-            persona={detailPersona}
-            onClose={() => setDetailPersona(null)}
-            className="min-h-0"
-          />
-        ) : (
           <div className="space-y-2">
             {mode === "single" && defaultCardsQuery.isLoading && quickPickCards.length === 0 && (
               <p className="text-[13px] text-text-variant">
@@ -782,13 +928,14 @@ export function PersonaSamplingRail({
                 <p className="text-[13px] text-text-variant">Loading cohort personas…</p>
               )}
           </div>
-        )}
       </div>
 
       <p className="mt-2 shrink-0 truncate text-center font-mono text-[12px] tracking-wide text-text-dim">
         <span className="font-semibold text-primary">{selectedPersonaIds.length}</span> selected ·{" "}
         {poolFooterLabel}
       </p>
+      </>
+      )}
 
       <PersonaFilterModal
         open={filterOpen}

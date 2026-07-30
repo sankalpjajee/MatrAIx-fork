@@ -9,8 +9,10 @@ persona subset: 每个目标 attribute 抽 5 正 + 5 反 (来源混合, 不分�
 
 依赖: huggingface_hub, pyarrow, pyyaml; 需 org 成员权限访问 gated repo。
 """
-import json, os, sys
-from collections import defaultdict, Counter
+import json
+import os
+import sys
+from collections import Counter
 from huggingface_hub import hf_hub_download
 import pyarrow.parquet as pq
 import yaml as _yaml

@@ -164,7 +164,7 @@ export function OsAppEvalCockpit({
     taskPersonaStrategy,
     useTaskDefaultStrategy,
     setUseTaskDefaultStrategy,
-  } = useSetupPersonaSampling(options, "os-app", setupTaskPath);
+  } = useSetupPersonaSampling(options, "os-app", setupTaskPath, isActive);
   const {
     batchJobName,
     batchTaskId,

@@ -13,7 +13,7 @@ export ANTHROPIC_API_KEY=...
 uv run harbor run \
   -a persona-computer-1 \
   -m anthropic/claude-sonnet-4-6 \
-  --ak persona_path=persona/datasets/bench-dev-sample/persona_0042.yaml \
+  --ak persona_path=persona/datasets/matraix-persona-dev-sample/persona_0042.yaml \
   --ak cua_submission_profile=book_interest \
   -p application/tasks/example-web-cua_bookshop-choice
 ```

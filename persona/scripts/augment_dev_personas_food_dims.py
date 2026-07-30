@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Append food/diet/cooking dims to checked-in bench-dev-sample personas.
+"""Append food/diet/cooking dims to checked-in matraix-persona-dev-sample personas.
 
 Preserves existing dimension values. Samples only missing EXTRA / cuis_* fields
 from the catalog using a deterministic RNG seeded by (base_seed, persona_id).
@@ -25,7 +25,7 @@ from matraix.persona_consistency import (  # noqa: E402
 )
 from matraix.persona_generator import load_catalog_values  # noqa: E402
 
-DEFAULT_SAMPLE = REPO_ROOT / "persona" / "datasets" / "bench-dev-sample"
+DEFAULT_SAMPLE = REPO_ROOT / "persona" / "datasets" / "matraix-persona-dev-sample"
 DEFAULT_SEED = 42
 
 
@@ -83,7 +83,7 @@ def main() -> int:
         "--sample-dir",
         type=Path,
         default=DEFAULT_SAMPLE,
-        help="bench-dev-sample directory",
+        help="matraix-persona-dev-sample directory",
     )
     parser.add_argument("--seed", type=int, default=DEFAULT_SEED)
     args = parser.parse_args()

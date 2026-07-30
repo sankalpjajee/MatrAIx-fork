@@ -36,6 +36,6 @@ def persona_data_dir(start: Path | None = None) -> Path:
 
     repo_root = repo_root_from(start)
     if repo_root is not None:
-        return repo_root / "persona" / "datasets" / "bench-dev-sample"
+        return repo_root / "persona" / "datasets" / "matraix-persona-dev-sample"
 
-    return Path(__file__).resolve().parents[4] / "persona" / "datasets" / "bench-dev-sample"
+    return Path(__file__).resolve().parents[4] / "persona" / "datasets" / "matraix-persona-dev-sample"

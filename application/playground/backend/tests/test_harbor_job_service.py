@@ -11,12 +11,12 @@ def test_launch_writes_job_config(tmp_path, monkeypatch):
     repo = tmp_path
     jobs_dir = repo / "jobs"
     jobs_dir.mkdir()
-    (repo / "persona" / "datasets" / "bench-dev-sample").mkdir(parents=True)
-    (repo / "persona" / "datasets" / "bench-dev-sample" / "persona_0001.yaml").write_text(
+    (repo / "persona" / "datasets" / "matraix-persona-dev-sample").mkdir(parents=True)
+    (repo / "persona" / "datasets" / "matraix-persona-dev-sample" / "persona_0001.yaml").write_text(
         "persona_id: '0001'\nversion: '1.0'\nsource: Nemotron\ndimensions: {}\n",
         encoding="utf-8",
     )
-    (repo / "persona" / "datasets" / "bench-dev-sample" / "persona_0002.yaml").write_text(
+    (repo / "persona" / "datasets" / "matraix-persona-dev-sample" / "persona_0002.yaml").write_text(
         "persona_id: '0002'\nversion: '1.0'\nsource: OASIS\ndimensions: {}\n",
         encoding="utf-8",
     )
@@ -44,7 +44,7 @@ def test_launch_writes_job_config(tmp_path, monkeypatch):
         task_path="application/tasks/example-survey_product-feedback",
         sample_size=2,
         seed=1,
-        persona_pool="persona/datasets/bench-dev-sample",
+        persona_pool="persona/datasets/matraix-persona-dev-sample",
         persona_model="anthropic/claude-haiku-4-5",
         job_name="test-harbor-job",
     )
@@ -129,7 +129,7 @@ def test_launch_with_explicit_persona_ids(tmp_path, monkeypatch):
     repo = tmp_path
     jobs_dir = repo / "jobs"
     jobs_dir.mkdir()
-    pool = repo / "persona" / "datasets" / "bench-dev-sample"
+    pool = repo / "persona" / "datasets" / "matraix-persona-dev-sample"
     pool.mkdir(parents=True)
     (pool / "persona_0042.yaml").write_text(
         "persona_id: '0042'\nversion: '1.0'\nsource: Nemotron\ndimensions: {}\n",
@@ -179,7 +179,7 @@ def test_retry_failed_reruns_only_failed_trials(tmp_path, monkeypatch):
     repo = tmp_path
     jobs_dir = repo / "jobs"
     jobs_dir.mkdir()
-    pool = repo / "persona" / "datasets" / "bench-dev-sample"
+    pool = repo / "persona" / "datasets" / "matraix-persona-dev-sample"
     pool.mkdir(parents=True)
     (pool / "persona_0001.yaml").write_text(
         "persona_id: '0001'\nversion: '1.0'\nsource: Nemotron\ndimensions: {}\n",
@@ -367,7 +367,7 @@ def test_launch_auto_chat_uses_local_distributed_executor(tmp_path, monkeypatch)
     repo = tmp_path
     jobs_dir = repo / "jobs"
     jobs_dir.mkdir()
-    pool = repo / "persona" / "datasets" / "bench-dev-sample"
+    pool = repo / "persona" / "datasets" / "matraix-persona-dev-sample"
     pool.mkdir(parents=True)
     (pool / "persona_0042.yaml").write_text(
         "persona_id: '0042'\nversion: '1.0'\nsource: Nemotron\ndimensions: {}\n",
@@ -571,7 +571,7 @@ def test_launch_ios_cua_uses_use_computer_environment(tmp_path, monkeypatch):
     repo = tmp_path
     jobs_dir = repo / "jobs"
     jobs_dir.mkdir()
-    pool = repo / "persona" / "datasets" / "bench-dev-sample"
+    pool = repo / "persona" / "datasets" / "matraix-persona-dev-sample"
     pool.mkdir(parents=True)
     (pool / "persona_0020.yaml").write_text(
         "persona_id: '0020'\nversion: '1.0'\nsource: OASIS\ndimensions: {}\n",
@@ -921,8 +921,8 @@ def test_launch_web_cli_stages_shared_web_cli_environment(tmp_path, monkeypatch)
         ),
         encoding="utf-8",
     )
-    (repo / "persona" / "datasets" / "bench-dev-sample").mkdir(parents=True)
-    (repo / "persona" / "datasets" / "bench-dev-sample" / "persona_0001.yaml").write_text(
+    (repo / "persona" / "datasets" / "matraix-persona-dev-sample").mkdir(parents=True)
+    (repo / "persona" / "datasets" / "matraix-persona-dev-sample" / "persona_0001.yaml").write_text(
         "persona_id: '0001'\nversion: '1.0'\nsource: Nemotron\ndimensions: {}\n",
         encoding="utf-8",
     )
@@ -940,7 +940,7 @@ def test_launch_web_cli_stages_shared_web_cli_environment(tmp_path, monkeypatch)
     job_name = service.launch(
         task_path="application/tasks/example-web-playwright_quote-choice",
         persona_ids=["0001"],
-        persona_pool="persona/datasets/bench-dev-sample",
+        persona_pool="persona/datasets/matraix-persona-dev-sample",
         agent_name="persona-codex",
         persona_model="openai/gpt-4o-mini",
         job_name="web-cli-job",

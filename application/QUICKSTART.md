@@ -22,7 +22,7 @@ user in a product scenario (survey, chat, web, …), and inspecting what they
 | **Anthropic API key** | Persona agents (step 6+). [Create one](https://console.anthropic.com/) if needed |
 | **OpenAI API key** | Some chat tasks and alternate LLM backends |
 
-Persona pool for local runs: `persona/datasets/bench-dev-sample/` (200 profiles;
+Persona pool for local runs: `persona/datasets/matraix-persona-dev-sample/` (200 profiles;
 smoke persona **`0042`**).
 
 ---
@@ -113,7 +113,7 @@ A **persona** is a YAML profile — demographics, preferences, communication sty
 etc. The agent reads it and tries to answer *as that person*.
 
 ```bash
-head -40 persona/datasets/bench-dev-sample/persona_0042.yaml
+head -40 persona/datasets/matraix-persona-dev-sample/persona_0042.yaml
 ```
 
 You will pass this file path on the command line as `persona_path=...`. Swap
@@ -131,7 +131,7 @@ person.
 | **Job** | A batch container: Harbor runs **many trials** from one YAML (step 7). Output lands in `jobs/<job_name>/` with one subfolder per trial. |
 | **Agent** | How the LLM is invoked — e.g. `persona-claude-code` (Claude Code CLI with persona injected). |
 | **Model** | Which LLM backs the agent — e.g. `anthropic/claude-sonnet-4-6`. Agent and model are independent flags. |
-| **Persona** | Which synthetic user profile — `persona_path=persona/datasets/bench-dev-sample/persona_0042.yaml`. |
+| **Persona** | Which synthetic user profile — `persona_path=persona/datasets/matraix-persona-dev-sample/persona_0042.yaml`. |
 
 **Step 6 vs 7:** Step 6 = you **name one persona** on the command line. Step 7 =
 `generate_application_job.py` **samples N personas** (with a **seed** for
@@ -189,7 +189,7 @@ The generator prints exact `export` lines. Script reference: [scripts/README.md]
 uv run harbor run \
   -a persona-claude-code \
   -m anthropic/claude-sonnet-4-6 \
-  --ak persona_path=persona/datasets/bench-dev-sample/persona_0042.yaml \
+  --ak persona_path=persona/datasets/matraix-persona-dev-sample/persona_0042.yaml \
   -p application/tasks/example-survey_product-feedback
 ```
 
@@ -198,7 +198,7 @@ uv run harbor run \
 | `-p` | Task path (the scenario) |
 | `-a` | Agent (`persona-claude-code`, `persona-browser-use`, …) |
 | `-m` | Model ID for that agent |
-| `--ak persona_path=...` | **Which person** — any `persona_XXXX.yaml` under `bench-dev-sample` |
+| `--ak persona_path=...` | **Which person** — any `persona_XXXX.yaml` under `matraix-persona-dev-sample` |
 
 Agent ↔ form mapping: [choosing-an-agent.md](choosing-an-agent.md).
 
@@ -228,7 +228,26 @@ uv run python application/scripts/generate_application_job.py \
   --execution-mode auto \
   --sample-size 10 \
   --seed 42 \
-  --dataset persona/datasets/bench-dev-sample
+  --dataset persona/datasets/matraix-persona-dev-sample
+```
+
+**Playground-parity retrieval** (sources / dimension filters / task strategy / cohorts):
+
+```bash
+# Uses <task>/persona_strategy.json by default (filters + stratify + sampleSize).
+uv run python application/scripts/generate_application_job.py \
+  --task application/tasks/example-survey_product-feedback \
+  --execution-mode auto
+
+# Explicit filters (same semantics as Persona World Filters).
+uv run python application/scripts/generate_application_job.py \
+  --task application/tasks/example-survey_product-feedback \
+  --execution-mode auto \
+  --sample-size 6 \
+  --sources wiki amazon \
+  --filter age_bracket=25-34,35-44 \
+  --filter economic_motivation=Cost-sensitive \
+  --no-strategy
 ```
 
 **Stratify** when you need balanced representation across a persona field:
@@ -244,12 +263,17 @@ uv run python application/scripts/generate_application_job.py \
 
 | Flag | Default | Meaning |
 |------|---------|---------|
-| `--sample-size` | `1` | How many personas (= how many trials in the job) |
-| `--persona-ids` | (none) | Explicit IDs instead of random sampling |
-| `--seed` | `42` | Random seed — same seed + pool → same persona IDs |
-| `--dataset` | `bench-dev-sample` | Persona pool to sample from |
+| `--sample-size` | strategy / `1` | How many personas (= how many trials in the job) |
+| `--persona-ids` | (none) | Explicit IDs instead of retrieval sampling |
+| `--seed` | strategy / `42` | Random seed — same seed + pool → same persona IDs |
+| `--dataset` | strategy / `matraix-persona-dev-sample` | Persona pool (also supports `matraix-persona-1m`) |
+| `--sources` | strategy | Restrict to source chips (`wiki`, `amazon`, …) |
+| `--filter DIM=VAL` | strategy | Dimension filter; repeatable; `a,b` for multi-value |
+| `--filters-json` | (none) | JSON object form of dimension filters |
+| `--strategy` / `--no-strategy` | auto-load task file | Apply or skip `persona_strategy.json` |
+| `--cohort-id` | strategy | Saved Playground cohort |
 | `--execution-mode` | `auto` | Same as Playground; use `force_docker` to always run in Docker |
-| `--stratify` | (none) | Balance across a field, e.g. `dimensions.age_bracket` |
+| `--stratify` | strategy | Balance across a field, e.g. `dimensions.age_bracket` |
 | `--name` | (derived) | Job basename |
 
 Run the generated job (paths are also in the YAML header):

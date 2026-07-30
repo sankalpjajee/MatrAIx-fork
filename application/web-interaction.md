@@ -74,7 +74,7 @@ export LLM_API_KEY="${ANTHROPIC_API_KEY}"
 uv run harbor run \
   -a persona-openhands-sdk \
   -m anthropic/claude-sonnet-4-6 \
-  --ak persona_path=persona/datasets/bench-dev-sample/persona_0042.yaml \
+  --ak persona_path=persona/datasets/matraix-persona-dev-sample/persona_0042.yaml \
   -p application/tasks/example-web-playwright_quote-choice
 ```
 

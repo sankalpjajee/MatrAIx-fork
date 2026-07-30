@@ -187,7 +187,7 @@ Status: scoped in branch `codex/configs-job-recipes`.
 Imported in this wave:
 
 - Curated `configs/jobs/example-job-recipe/appSim-*.yaml` recipes that point at
-  `application/tasks/` and `persona/datasets/bench-dev-sample/`.
+  `application/tasks/` and `persona/datasets/matraix-persona-dev-sample/`.
 
 Still deferred:
 

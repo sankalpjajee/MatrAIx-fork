@@ -12,11 +12,18 @@
     ],
     "intent": [
       "Get task done"
+    ],
+    "skill_photography": [
+      "Master",
+      "Advanced",
+      "Intermediate",
+      "Beginner",
+      "None"
     ]
   },
   "sampleSizePerValueGroup": 1,
   "stratifyFields": [
-    "photography_experience",
+    "skill_photography",
     "age_bracket"
   ]
 }

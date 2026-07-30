@@ -12,11 +12,30 @@
     ],
     "intent": [
       "Get task done"
+    ],
+    "years_experience": [
+      "0-2",
+      "3-5",
+      "6-10",
+      "11-20",
+      "20+"
+    ],
+    "highest_education": [
+      "No formal",
+      "Primary",
+      "Secondary",
+      "Vocational / cert",
+      "Some college",
+      "Associate's",
+      "Bachelor's",
+      "Master's",
+      "Doctorate",
+      "Postdoc"
     ]
   },
   "sampleSizePerValueGroup": 1,
   "stratifyFields": [
-    "work_experience",
-    "education_level"
+    "years_experience",
+    "highest_education"
   ]
 }

@@ -16,6 +16,7 @@ import { TaskGalleryView } from "@/components/TaskGalleryView";
 import { AppFooter } from "@/components/AppFooter";
 
 import { api } from "@/lib/api";
+import { writePersonaHandoff } from "@/lib/personaHandoffStorage";
 import { useUrlState } from "@/lib/useUrlState";
 import type { ConfigOptionsResponse, Domain } from "@/lib/types";
 
@@ -70,6 +71,20 @@ export default function App() {
         view: null,
         pgTask: taskType,
         pgTaskId: taskId,
+        harborJob: null,
+        harborTrial: null,
+      });
+    },
+    [setUrlState],
+  );
+
+  const openPersonasInPlayground = useCallback(
+    (input: { pool: string; personaIds: string[] }) => {
+      writePersonaHandoff(input);
+      setUrlState({
+        mode: "playground",
+        view: null,
+        pgPersonaHandoff: "1",
         harborJob: null,
         harborTrial: null,
       });
@@ -148,7 +163,7 @@ export default function App() {
     return (
       <div className="flex h-screen flex-col">
         {topBar}
-        <PersonaStoreView />
+        <PersonaStoreView onOpenInPlayground={openPersonasInPlayground} />
       </div>
     );
   }

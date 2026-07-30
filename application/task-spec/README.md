@@ -340,7 +340,7 @@ Use this when a step above is not enough — not as a flat reading list.
 - [ ] Verifier emits `structured_output.json` with shared context names where applicable
 - [ ] `reporting.json` exists (empty `contextRules` is fine)
 - [ ] `persona_strategy.json` at task root with a target cohort (`dimensionFilters` and/or `cohortId`; see [authoring-bundle.md](authoring-bundle.md#persona_strategyjson))
-- [ ] If strategy filters are narrower than `bench-dev-sample` coverage, prefer `generate_dev_personas.py --strategy …` first (Playground auto top-up is a fallback; synthetic pools exist because the production persona dataset is not ready yet — use them to validate task design + persona reporting, see [authoring-bundle.md](authoring-bundle.md#ensuring-pool-coverage))
+- [ ] If strategy filters are narrower than `matraix-persona-dev-sample` coverage, sample from `matraix-persona-1m`, widen filters, or use a saved cohort (see [authoring-bundle.md](authoring-bundle.md#ensuring-pool-coverage))
 - [ ] Interactive tasks: `self_report_schema.yaml` → `user_feedback` context when used
 - [ ] Smoke run passes on at least one persona before batch scale-up
 - [ ] Multi-persona batch validation: attach the **Playground UI** batch PDF

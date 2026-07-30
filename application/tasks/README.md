@@ -55,22 +55,13 @@ the scenario, task metadata, and verifier.
    (`dimensionFilters` and/or `cohortId`; default mode, optional `sampleSize`).
    See
    [`../task-spec/authoring-bundle.md`](../task-spec/authoring-bundle.md#persona_strategyjson).
-9. If those filters are narrower than `bench-dev-sample` (~200 personas),
-   generate a local coverage pool **before** Playground / CLI sampling fails.
-   The production persona dataset is not ready yet — synthetic pools exist so
-   you can ship and exercise **task design** plus the **persona reporting /
-   analysis** path, not as a stand-in for the final population:
-
-   ```bash
-   uv run python persona/scripts/generate_dev_personas.py \
-     --strategy application/tasks/<your-task-name>/persona_strategy.json
-   ```
-
-   Playground will also auto top-up `_generated/` when coverage is too thin;
-   the CLI is the preferred contributor path. Details:
+9. If those filters are narrower than `matraix-persona-dev-sample` (~200 personas),
+   sample from `persona/datasets/matraix-persona-1m`, widen filters / sources, or
+   use a saved cohort. Playground does **not** synthesize coverage pools.
+   Details:
    [Ensuring pool coverage](../task-spec/authoring-bundle.md#ensuring-pool-coverage).
-10. Use `persona/datasets/bench-dev-sample/persona_0042.yaml` for lightweight
-   smoke examples until a larger persona dataset is restored externally.
+10. Use `persona/datasets/matraix-persona-dev-sample/persona_0042.yaml` for lightweight
+   smoke examples; use `matraix-persona-1m` for production-scale cohorts.
 
 For survey tasks, create a canonical task-local bundle under:
 

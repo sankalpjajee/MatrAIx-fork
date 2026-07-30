@@ -7,7 +7,7 @@ Persona adherence validation 用的 persona 子集（第二个 validation / prob
   `attribute_hits`。）
 - 来源：`HFXM/MatrAIx-Wiki-Personas` + `HFXM/MatrAIx-Amazon-Review-Personas-10K`
   两源提取（各 persona 完整 1290-attribute 提取，转成本仓库标准 yaml 时只保留非空维度）。
-- 格式与 `bench-dev-sample` 一致：`persona_XXXX.yaml`（`dimensions:` = id→value）+ `manifest.json`。
+- 格式与 `matraix-persona-dev-sample` 一致：`persona_XXXX.yaml`（`dimensions:` = id→value）+ `manifest.json`。
   `source` 字段记录原始来源 `wiki:<qid>` / `amazon:<user_id>`。
 
 ## 10 个目标 attribute（X 正 / Y 反）

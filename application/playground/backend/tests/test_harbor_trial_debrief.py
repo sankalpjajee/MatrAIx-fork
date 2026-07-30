@@ -10,7 +10,7 @@ from backend.service.harbor_trial_debrief import map_trial_debrief
 
 
 def _write_chat_trial(repo: Path, job_name: str, trial_name: str) -> None:
-    persona_path = repo / "persona" / "datasets" / "bench-dev-sample" / "persona_0042.yaml"
+    persona_path = repo / "persona" / "datasets" / "matraix-persona-dev-sample" / "persona_0042.yaml"
     persona_path.parent.mkdir(parents=True, exist_ok=True)
     persona_path.write_text(
         "persona_id: '0042'\nversion: '1.0'\nsource: Nemotron\ndimensions: {}\n",
@@ -48,7 +48,7 @@ def _write_chat_trial(repo: Path, job_name: str, trial_name: str) -> None:
                 "config": {
                     "agent": {
                         "kwargs": {
-                            "persona_path": "persona/datasets/bench-dev-sample/persona_0042.yaml",
+                            "persona_path": "persona/datasets/matraix-persona-dev-sample/persona_0042.yaml",
                         }
                     }
                 }
@@ -397,7 +397,7 @@ def test_map_trial_debrief_survey_responses(tmp_path: Path) -> None:
 
 def test_map_trial_debrief_survey_enriches_persona_dimensions(tmp_path: Path) -> None:
     repo = tmp_path
-    persona_dir = repo / "persona" / "datasets" / "bench-dev-sample"
+    persona_dir = repo / "persona" / "datasets" / "matraix-persona-dev-sample"
     persona_dir.mkdir(parents=True)
     (persona_dir / "persona_0174.yaml").write_text(
         "\n".join(
@@ -422,7 +422,7 @@ def test_map_trial_debrief_survey_enriches_persona_dimensions(tmp_path: Path) ->
                 "task": {"path": "application/tasks/example-survey_product-feedback"},
                 "agent": {
                     "kwargs": {
-                        "persona_path": "persona/datasets/bench-dev-sample/persona_0174.yaml",
+                        "persona_path": "persona/datasets/matraix-persona-dev-sample/persona_0174.yaml",
                     }
                 },
             }
@@ -705,7 +705,7 @@ def test_map_trial_debrief_web_recovers_from_trajectory_when_artifact_missing(
     tmp_path: Path,
 ) -> None:
     repo = tmp_path
-    persona_path = repo / "persona" / "datasets" / "bench-dev-sample" / "persona_0020.yaml"
+    persona_path = repo / "persona" / "datasets" / "matraix-persona-dev-sample" / "persona_0020.yaml"
     persona_path.parent.mkdir(parents=True, exist_ok=True)
     persona_path.write_text(
         "persona_id: '0020'\nversion: '1.0'\nsource: Nemotron\ndimensions: {}\n",
@@ -772,7 +772,7 @@ def test_map_trial_debrief_web_recovers_from_trajectory_when_artifact_missing(
                     "task": {"path": "application/tasks/example-web-playwright_quote-choice"},
                     "agent": {
                         "kwargs": {
-                            "persona_path": "persona/datasets/bench-dev-sample/persona_0020.yaml",
+                            "persona_path": "persona/datasets/matraix-persona-dev-sample/persona_0020.yaml",
                         }
                     },
                 },
@@ -798,7 +798,7 @@ def test_map_trial_debrief_web_recovers_from_trajectory_when_artifact_missing(
 
 def test_map_trial_debrief_web_maps_decision_submission_artifact(tmp_path: Path) -> None:
     repo = tmp_path
-    persona_path = repo / "persona" / "datasets" / "bench-dev-sample" / "persona_0001.yaml"
+    persona_path = repo / "persona" / "datasets" / "matraix-persona-dev-sample" / "persona_0001.yaml"
     persona_path.parent.mkdir(parents=True, exist_ok=True)
     persona_path.write_text(
         "persona_id: '0001'\nversion: '1.0'\nsource: Nemotron\ndimensions: {}\n",
@@ -835,7 +835,7 @@ def test_map_trial_debrief_web_maps_decision_submission_artifact(tmp_path: Path)
                 "task": {"path": "application/tasks/example-web-cocoa_plan-choice"},
                 "agent": {
                     "kwargs": {
-                        "persona_path": "persona/datasets/bench-dev-sample/persona_0001.yaml",
+                        "persona_path": "persona/datasets/matraix-persona-dev-sample/persona_0001.yaml",
                     }
                 },
             }
@@ -867,7 +867,7 @@ def test_map_trial_debrief_web_restores_harbor_import_paths_when_missing(
     monkeypatch,
 ) -> None:
     repo = tmp_path
-    persona_path = repo / "persona" / "datasets" / "bench-dev-sample" / "persona_0020.yaml"
+    persona_path = repo / "persona" / "datasets" / "matraix-persona-dev-sample" / "persona_0020.yaml"
     persona_path.parent.mkdir(parents=True, exist_ok=True)
     persona_path.write_text(
         "persona_id: '0020'\nversion: '1.0'\nsource: Nemotron\ndimensions: {}\n",
@@ -928,7 +928,7 @@ def test_map_trial_debrief_web_restores_harbor_import_paths_when_missing(
                 "task": {"path": "application/tasks/example-web-playwright_quote-choice"},
                 "agent": {
                     "kwargs": {
-                        "persona_path": "persona/datasets/bench-dev-sample/persona_0020.yaml",
+                        "persona_path": "persona/datasets/matraix-persona-dev-sample/persona_0020.yaml",
                     }
                 },
             }

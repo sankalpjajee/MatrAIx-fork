@@ -11,10 +11,10 @@ fields in the job YAML).
 | `-a` | Persona agent | `persona-claude-code` |
 | `-m` | Persona LLM (simulated user) | `anthropic/claude-sonnet-4-6` |
 | `-p` | Task scenario | `application/tasks/example-survey_product-feedback` |
-| `--ak persona_path` | Persona YAML (**which profile**) | `persona/datasets/bench-dev-sample/persona_0042.yaml` |
+| `--ak persona_path` | Persona YAML (**which profile**) | `persona/datasets/matraix-persona-dev-sample/persona_0042.yaml` |
 | `--model-name` | Same as `-m`, on `generate_application_job.py` | `openai/gpt-4o-mini` |
 
-Default smoke persona: **`persona_0042`** in `persona/datasets/bench-dev-sample/`.
+Default smoke persona: **`persona_0042`** in `persona/datasets/matraix-persona-dev-sample/`.
 
 ## Persona model (`-m` / `--model-name`)
 
@@ -150,7 +150,7 @@ Web CLI runs (Playground **Web → CLI family**) use the same runner credentials
 uv run harbor run \
   -a persona-claude-code \
   -m anthropic/claude-sonnet-4-6 \
-  --ak persona_path=persona/datasets/bench-dev-sample/persona_0042.yaml \
+  --ak persona_path=persona/datasets/matraix-persona-dev-sample/persona_0042.yaml \
   -p application/tasks/example-chat-mcp_support_chatbot
 ```
 
@@ -158,7 +158,7 @@ uv run harbor run \
 uv run harbor run \
   -a persona-browser-use \
   -m anthropic/claude-sonnet-4-6 \
-  --ak persona_path=persona/datasets/bench-dev-sample/persona_0042.yaml \
+  --ak persona_path=persona/datasets/matraix-persona-dev-sample/persona_0042.yaml \
   -p application/tasks/example-web-browser-use_laptop-choice
 ```
 

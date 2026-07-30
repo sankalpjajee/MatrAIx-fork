@@ -8,6 +8,7 @@ import { RailInsetModal } from "./RailInsetModal";
 export interface BenchPersonaDetailModalProps {
   open: boolean;
   persona: PersonaPoolPersonaCard | null;
+  pool?: string | null;
   onClose: () => void;
   onUse?: (persona: PersonaPoolPersonaCard) => void;
 }
@@ -15,13 +16,15 @@ export interface BenchPersonaDetailModalProps {
 export function BenchPersonaDetailModal({
   open,
   persona,
+  pool = PERSONA_BENCH_POOL,
   onClose,
   onUse,
 }: BenchPersonaDetailModalProps) {
   const personaId = persona?.personaId ?? null;
+  const activePool = pool?.trim() || PERSONA_BENCH_POOL;
   const detailQuery = useQuery({
-    queryKey: ["persona-pool-detail", personaId],
-    queryFn: () => api.getPersonaPoolPersona(personaId!),
+    queryKey: ["persona-pool-detail", activePool, personaId],
+    queryFn: () => api.getPersonaPoolPersona(personaId!, activePool),
     enabled: open && Boolean(personaId),
     staleTime: 120_000,
     retry: 1,
@@ -33,10 +36,10 @@ export function BenchPersonaDetailModal({
     <RailInsetModal
       open={open && Boolean(persona)}
       title={persona?.name ?? (personaId ? `persona-${personaId}` : "Persona")}
-      subtitle={`Persona · ${PERSONA_BENCH_POOL}`}
+      subtitle={`Persona · ${activePool}`}
       onClose={onClose}
     >
-      {detailQuery.isLoading && (
+      {detailQuery.isPending && (
         <p className="text-[14px] text-text-dim">Loading persona record…</p>
       )}
       {detailQuery.isError && (

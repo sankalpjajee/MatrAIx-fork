@@ -12,11 +12,19 @@
     ],
     "intent": [
       "Get task done"
+    ],
+    "demo_parental_status": [
+      "Not a parent",
+      "New parent",
+      "Parent of minors",
+      "Parent of adults",
+      "Grandparent",
+      "Step / foster parent"
     ]
   },
   "sampleSizePerValueGroup": 1,
   "stratifyFields": [
-    "parenting_stage",
+    "demo_parental_status",
     "age_bracket"
   ]
 }

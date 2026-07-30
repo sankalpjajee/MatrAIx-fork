@@ -225,7 +225,7 @@ def _catalog_order(row: dict[str, Any]) -> int:
 def load_dev_dimension_ids(
     *, catalog_path: str = DEFAULT_CATALOG_PATH
 ) -> tuple[str, ...]:
-    """Standard persona fields for bench-dev-sample and Playground generation.
+    """Standard persona fields for matraix-persona-dev-sample and Playground generation.
 
     Includes the core block (index ≤ 47), all ``cog_*`` communication dims,
     food/diet/cooking dims (``DEV_FOOD_DIMENSION_IDS``), and every ``cuis_*``.

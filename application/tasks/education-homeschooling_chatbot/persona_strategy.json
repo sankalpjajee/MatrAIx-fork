@@ -14,6 +14,18 @@
       "Learn / explain",
       "Brainstorm",
       "Get task done"
+    ],
+    "highest_education": [
+      "No formal",
+      "Primary",
+      "Secondary",
+      "Vocational / cert",
+      "Some college",
+      "Associate's",
+      "Bachelor's",
+      "Master's",
+      "Doctorate",
+      "Postdoc"
     ]
   },
   "sampleSizePerValueGroup": 1,

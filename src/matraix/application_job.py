@@ -8,6 +8,7 @@ from typing import Any
 
 import yaml
 
+from matraix.persona_agent_context import apply_persona_context_to_agent_spec
 from matraix.persona_job import (
     load_manifest,
     sample_personas,
@@ -212,11 +213,14 @@ def build_application_job_config(
     job_slug = spec.get("name", "application-task-job")
 
     agents = [
-        {
-            "name": agent_spec["name"],
-            "model_name": agent_spec["model_name"],
-            "kwargs": {"persona_path": entry["path"]},
-        }
+        apply_persona_context_to_agent_spec(
+            {
+                "name": agent_spec["name"],
+                "model_name": agent_spec["model_name"],
+                "kwargs": {"persona_path": entry["path"]},
+            },
+            model_name=str(agent_spec.get("model_name") or ""),
+        )
         for entry in chosen
     ]
 

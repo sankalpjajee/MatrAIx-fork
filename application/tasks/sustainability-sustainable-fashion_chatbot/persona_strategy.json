@@ -12,11 +12,18 @@
     ],
     "intent": [
       "Get task done"
+    ],
+    "val_sustainability": [
+      "Core value",
+      "Important",
+      "Moderate",
+      "Minor",
+      "Irrelevant"
     ]
   },
   "sampleSizePerValueGroup": 1,
   "stratifyFields": [
-    "environmental_engagement",
+    "val_sustainability",
     "age_bracket"
   ]
 }

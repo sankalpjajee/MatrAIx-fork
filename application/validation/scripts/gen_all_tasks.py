@@ -9,6 +9,7 @@ attributes -> write a short text file. The env is just the shell (web = openhand
 browsing+writing, os-app = computer-1 desktop). All instructions are NEUTRAL.
 Judged afterwards by judge_adherence.py.
 """
+
 from __future__ import annotations
 import os
 from pathlib import Path
@@ -18,52 +19,103 @@ TASKS = ROOT / "application/validation/tasks"
 
 # attr -> (X, Y, kind, task_text, output_file)
 #   kind: "code" -> writes a .py; "text" -> writes answer.txt
-CODE = "code"; TEXT = "text"
+CODE = "code"
+TEXT = "text"
 ATTRS = {
- "code_comment_style": ("Extensive inline comments", "No comments", CODE,
-    "a Python function fizzbuzz(n) that prints 1..n with Fizz/Buzz/FizzBuzz rules", "fizzbuzz.py"),
- "code_naming_verbosity": ("Highly verbose (long descriptive names)", "Single-letter names", CODE,
-    "a Python function that returns the average of a list of numbers", "average.py"),
- "code_summary_documentation": ("Always includes function-level TLDR", "Never includes TLDR", CODE,
-    "a Python function is_prime(n) that returns whether n is prime", "is_prime.py"),
- "cog_use_of_jargon": ("Heavy", "Avoids jargon", TEXT,
-    "a short paragraph explaining how a website loads when you type its address", "answer.txt"),
- "cog_emoji_use": ("Heavy", "Never", TEXT,
-    "a short one-paragraph review of a note-taking app you love", "answer.txt"),
- "cog_verbosity": ("Rambling", "Terse", TEXT,
-    "a description of how you keep track of your daily tasks", "answer.txt"),
- "cog_politeness": ("Very polite", "Rude", TEXT,
-    "a message asking a coworker to resend a file they forgot to attach", "answer.txt"),
- "register": ("Formal / standard", "Colloquial", TEXT,
-    "a short message telling a friend about your weekend plans", "answer.txt"),
- "cog_humor": ("Playful", "Serious", TEXT,
-    "your reply to someone asking 'how's your week going?'", "answer.txt"),
- "cog_storytelling": ("Very high", "None", TEXT,
-    "a short piece explaining why staying organized matters to you", "answer.txt"),
+    "code_comment_style": (
+        "Extensive inline comments",
+        "No comments",
+        CODE,
+        "a Python function fizzbuzz(n) that prints 1..n with Fizz/Buzz/FizzBuzz rules",
+        "fizzbuzz.py",
+    ),
+    "code_naming_verbosity": (
+        "Highly verbose (long descriptive names)",
+        "Single-letter names",
+        CODE,
+        "a Python function that returns the average of a list of numbers",
+        "average.py",
+    ),
+    "code_summary_documentation": (
+        "Always includes function-level TLDR",
+        "Never includes TLDR",
+        CODE,
+        "a Python function is_prime(n) that returns whether n is prime",
+        "is_prime.py",
+    ),
+    "cog_use_of_jargon": (
+        "Heavy",
+        "Avoids jargon",
+        TEXT,
+        "a short paragraph explaining how a website loads when you type its address",
+        "answer.txt",
+    ),
+    "cog_emoji_use": (
+        "Heavy",
+        "Never",
+        TEXT,
+        "a short one-paragraph review of a note-taking app you love",
+        "answer.txt",
+    ),
+    "cog_verbosity": (
+        "Rambling",
+        "Terse",
+        TEXT,
+        "a description of how you keep track of your daily tasks",
+        "answer.txt",
+    ),
+    "cog_politeness": (
+        "Very polite",
+        "Rude",
+        TEXT,
+        "a message asking a coworker to resend a file they forgot to attach",
+        "answer.txt",
+    ),
+    "register": (
+        "Formal / standard",
+        "Colloquial",
+        TEXT,
+        "a short message telling a friend about your weekend plans",
+        "answer.txt",
+    ),
+    "cog_humor": (
+        "Playful",
+        "Serious",
+        TEXT,
+        "your reply to someone asking 'how's your week going?'",
+        "answer.txt",
+    ),
+    "cog_storytelling": (
+        "Very high",
+        "None",
+        TEXT,
+        "a short piece explaining why staying organized matters to you",
+        "answer.txt",
+    ),
 }
 
 ENVS = {
- "web": {
-   "definition": "application/shared-web-playwright",
-   "agent": "persona-openhands-sdk",
-   "extra_toml": '\nnetwork_mode = "public"',
-   "build": 900,
- },
- "osapp-linux": {
-   "definition": "application/shared-os-app-linux",
-   "agent": "persona-computer-1",
-   "extra_toml": "",
-   "build": 1200,
- },
+    "web": {
+        "definition": "application/shared-web-playwright",
+        "agent": "persona-openhands-sdk",
+        "extra_toml": '\nnetwork_mode = "public"',
+        "build": 900,
+    },
+    "osapp-linux": {
+        "definition": "application/shared-os-app-linux",
+        "agent": "persona-computer-1",
+        "extra_toml": "",
+        "build": 1200,
+    },
 }
 
 
-def slug(a): return a.replace("_", "-")
+def slug(a):
+    return a.replace("_", "-")
 
 
 def task_toml(envkey, env, attr):
     net = '\nnetwork_mode = "public"' if envkey == "web" else ""
-    agent_net = env["extra_toml"]
     return f'''version = "1.0"
 artifacts = [ "/app/output",]
 
@@ -72,7 +124,7 @@ name = "application/probe-{envkey}-{slug(attr)}"
 
 [metadata]
 difficulty = "easy"
-type = "{'web' if envkey=='web' else 'os-app'}"
+type = "{"web" if envkey == "web" else "os-app"}"
 domain = "software"
 tags = [ "attribute-probe", "{attr}", "ab-validation",]
 
@@ -80,21 +132,21 @@ tags = [ "attribute-probe", "{attr}", "ab-validation",]
 timeout_sec = 300.0
 
 [agent]
-timeout_sec = {1800 if envkey!='web' else 900}.0{net}
+timeout_sec = {1800 if envkey != "web" else 900}.0{net}
 
 [environment]
-definition = "{env['definition']}"
-build_timeout_sec = {env['build']}.0
-cpus = {4 if envkey!='web' else 1}
+definition = "{env["definition"]}"
+build_timeout_sec = {env["build"]}.0
+cpus = {4 if envkey != "web" else 1}
 memory_mb = 4096
-storage_mb = {40960 if envkey!='web' else 10240}
+storage_mb = {40960 if envkey != "web" else 10240}
 gpus = 0{net}
 '''
 
 
 def instruction(kind, task_text, outfile):
     if kind == CODE:
-        return f'''# Coding task
+        return f"""# Coding task
 
 Open a terminal or editor on this machine and create the file
 `/app/output/{outfile}`.
@@ -102,16 +154,16 @@ Open a terminal or editor on this machine and create the file
 The file must contain {task_text}.
 
 Write the code the way you normally would, then save the file.
-'''
-    return f'''# Short writing task
+"""
+    return f"""# Short writing task
 
 Create the file `/app/output/{outfile}` containing {task_text}.
 
 Write it the way that feels natural to you — there are no style requirements.
-'''
+"""
 
 
-STRATEGY = '''{{
+STRATEGY = """{{
   "schemaVersion": "1.0",
   "sources": [],
   "defaultMode": "stratified",
@@ -119,18 +171,18 @@ STRATEGY = '''{{
   "stratifyFields": ["{attr}"],
   "sampleSize": 10
 }}
-'''
+"""
 
 CONTEXT = "# Task\n\nA short task. Complete it your own way; there are no style requirements.\n"
 REPORTING = '{\n  "schemaVersion": "1.0",\n  "contextRules": []\n}\n'
 
-VERIFIER_ENV = '''SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+VERIFIER_ENV = """SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 export VERIFIER_DIR="${HARBOR_VERIFIER_DIR:-/logs/verifier}"
 mkdir -p "${VERIFIER_DIR}"
-'''
+"""
 
 # verifier: presence-check the output file, emit its text for the judge
-TEST_SH = '''#!/usr/bin/env bash
+TEST_SH = """#!/usr/bin/env bash
 set -uo pipefail
 source "$(cd "$(dirname "${{BASH_SOURCE[0]}}")" && pwd)/verifier_env.sh"
 export VERIFIER_DIR
@@ -165,13 +217,13 @@ rc=$?
 set -e
 if [ $rc -eq 0 ]; then printf '1\\n' > "${{VERIFIER_DIR}}/reward.txt"; else printf '0\\n' > "${{VERIFIER_DIR}}/reward.txt"; fi
 exit $rc
-'''
+"""
 
-README = '''# probe-{envkey}_{slug}
+README = """# probe-{envkey}_{slug}
 
 **Attribute:** `{attr}` — X=`{X}` / Y=`{Y}`  **Env:** {envkey}
 Neutral task; A/B over 5+5 personas. Judge with judge_adherence.py.
-'''
+"""
 
 
 def main():
@@ -186,11 +238,17 @@ def main():
             (d / "task.toml").write_text(task_toml(envkey, env, attr))
             (d / "instruction.md").write_text(instruction(kind, task_text, outfile))
             (d / "input/context.md").write_text(CONTEXT)
-            (d / "persona_strategy.json").write_text(STRATEGY.format(attr=attr, X=X, Y=Y))
+            (d / "persona_strategy.json").write_text(
+                STRATEGY.format(attr=attr, X=X, Y=Y)
+            )
             (d / "reporting.json").write_text(REPORTING)
             (d / "tests/verifier_env.sh").write_text(VERIFIER_ENV)
-            (d / "tests/test.sh").write_text(TEST_SH.format(outfile=outfile, ttype=ttype))
-            (d / "README.md").write_text(README.format(envkey=envkey, slug=s, attr=attr, X=X, Y=Y))
+            (d / "tests/test.sh").write_text(
+                TEST_SH.format(outfile=outfile, ttype=ttype)
+            )
+            (d / "README.md").write_text(
+                README.format(envkey=envkey, slug=s, attr=attr, X=X, Y=Y)
+            )
             os.chmod(d / "tests/test.sh", 0o755)
             made.append(d.name)
     print(f"generated {len(made)} tasks:")

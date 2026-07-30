@@ -17,7 +17,11 @@ Output: prints one JSON verdict per trial and an aggregate; writes
 <job_dir>/adherence_judge.json.
 """
 from __future__ import annotations
-import argparse, json, os, sys, urllib.request
+import argparse
+import json
+import os
+import sys
+import urllib.request
 from pathlib import Path
 
 CAPI_URL_DEFAULT = "https://api.githubcopilot.com"

@@ -68,7 +68,7 @@ The task lives at `examples/tasks/hello-world/`. Generated job outputs go under
 ## Run A Persona Application Example
 
 The curated application recipes use the checked-in sample persona dataset under
-`persona/datasets/bench-dev-sample/`.
+`persona/datasets/matraix-persona-dev-sample/`.
 
 ```bash
 export ANTHROPIC_API_KEY="sk-ant-..."

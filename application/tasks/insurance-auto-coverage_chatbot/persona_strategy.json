@@ -13,6 +13,13 @@
     "intent": [
       "Get task done",
       "Decide"
+    ],
+    "risk_tolerance": [
+      "Risk-averse",
+      "Cautious",
+      "Balanced",
+      "Risk-tolerant",
+      "Risk-seeking"
     ]
   },
   "sampleSizePerValueGroup": 1,
