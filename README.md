@@ -2,6 +2,8 @@
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/)
+[![Website](https://img.shields.io/badge/Website-matraix.ai-0A0A0A)](https://matraix.ai/)
+[![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Persona%201M-ffd21e)](https://huggingface.co/datasets/MatrAIx2026/MatrAIx_Persona_1M_Public_Release)
 [![Discord](https://img.shields.io/badge/Discord-join-5865F2?logo=discord&logoColor=white)](https://discord.gg/vruP88PTZ)
 
 > **Simulate before reality.**
@@ -149,11 +151,11 @@ Literature: [docs/research/](docs/research/README.md)
 
 ## Star History
 
-<a href="https://www.star-history.com/?repos=MatrAIx-ai%2FMatrAIx&type=date&legend=top-left">
+<a href="https://www.star-history.com/#MatrAIx-ai/MatrAIx-Community&Date">
  <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=MatrAIx-ai/MatrAIx&type=date&theme=dark&legend=top-left&sealed_token=qlhUK1GNCbwEzVBgvIljmXHDgwWEJn9XR0nA2HZ25C3PuehFlXS5of-7EPUIocdhmHKcdgt6GMKyP3VSKxZ7ZabWvWmqS66Jo_6FYLJ6IvwXgsLgnsjRzg" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=MatrAIx-ai/MatrAIx&type=date&legend=top-left&sealed_token=qlhUK1GNCbwEzVBgvIljmXHDgwWEJn9XR0nA2HZ25C3PuehFlXS5of-7EPUIocdhmHKcdgt6GMKyP3VSKxZ7ZabWvWmqS66Jo_6FYLJ6IvwXgsLgnsjRzg" />
-   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=MatrAIx-ai/MatrAIx&type=date&legend=top-left&sealed_token=qlhUK1GNCbwEzVBgvIljmXHDgwWEJn9XR0nA2HZ25C3PuehFlXS5of-7EPUIocdhmHKcdgt6GMKyP3VSKxZ7ZabWvWmqS66Jo_6FYLJ6IvwXgsLgnsjRzg" />
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=MatrAIx-ai/MatrAIx-Community&type=Date&theme=dark&legend=top-left" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=MatrAIx-ai/MatrAIx-Community&type=Date&legend=top-left" />
+   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=MatrAIx-ai/MatrAIx-Community&type=Date&legend=top-left" />
  </picture>
 </a>
 
